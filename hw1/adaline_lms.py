@@ -4,7 +4,7 @@ import tensorflow as tf
 import matplotlib
 import matplotlib.pyplot as plt
 
-matplotlib.style.use("Solarize_Light2")
+matplotlib.style.use("ggplot")
 
 np.random.seed(0)
 tf.random.set_random_seed(0)

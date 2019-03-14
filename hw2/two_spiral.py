@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import time
 from contextlib import contextmanager
@@ -64,7 +66,7 @@ class MLQP(object):
             if ep % 100 == 0:
                 loss = float(np.mean(losses))
                 losses = []
-                print('ep %i, loss %.5f' % (ep, loss))
+                # print('ep %i, loss %.5f' % (ep, loss))
                 if loss < self.loss_threshold:
                     break
 
@@ -77,7 +79,8 @@ class MLQP(object):
             else:
                 plt.scatter(X[i][0], X[i][1], c='green')
         plt.savefig('lr%f_test.jpg' % lr)
-        plt.show()
+        # plt.show()
+        plt.cla()
 
         X = []
         for i in np.linspace(-3.5, 3.5, 100):
@@ -90,8 +93,8 @@ class MLQP(object):
             else:
                 plt.scatter(X[i][0], X[i][1], c='white')
         plt.savefig('lr%f_plot.jpg' % lr)
-        plt.show()
-
+        # plt.show()
+        plt.cla()
 
 if __name__ == '__main__':
     mlqp = MLQP(np.loadtxt('hw2_data/two_spiral_train.txt'),

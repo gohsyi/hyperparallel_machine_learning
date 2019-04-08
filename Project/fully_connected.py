@@ -9,7 +9,7 @@ MAX_EPOCHES = int(1e4)
 
 
 class FullyConnected(object):
-    def __init__(self, name, lr,  n_classes, max_epoches, train_data, train_label, test_data=None, test_label=None):
+    def __init__(self, name, lr, n_classes, max_epoches, train_data, train_label, test_data=None, test_label=None):
         import logging
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
@@ -62,8 +62,10 @@ class FullyConnected(object):
                 if self.to_test:
                     self.logger.info('ep:%i\tloss:%f\tacc:%f' % (ep, loss, self.test()))
                 else:
-                    self.logger.info('ep:%i\tloss:%f' % (ep, loss))
-        self.logger.info('model %s finished training' % self.name)
+                    # self.logger.info('ep:%i\tloss:%f' % (ep, loss))
+                    print('ep:%i\tloss:%f' % (ep, loss))
+        # self.logger.info('model %s finished training' % self.name)
+        print('model %s finished training' % self.name)
 
     def test(self):
         logits = self.sess.run(self.logits_, feed_dict={self.X: self.test_data})
@@ -85,7 +87,7 @@ def main():
     test_de = data['test_de']
     test_label_eeg = data['test_label_eeg']
 
-    model = FullyConnected('fully_connected', LEARNING_RATE, MAX_EPOCHES, train_de, train_label_eeg, test_de, test_label_eeg)
+    model = FullyConnected('fully_connected', LEARNING_RATE, 4, MAX_EPOCHES, train_de, train_label_eeg, test_de, test_label_eeg)
     model.train()
 
 

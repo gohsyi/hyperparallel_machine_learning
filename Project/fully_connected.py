@@ -40,7 +40,7 @@ class FullyConnected(object):
             self.logits_ = tf.layers.dense(
                 self.X,
                 self.n_classes,
-                activation=tf.nn.relu,
+                activation=tf.nn.sigmoid,
                 kernel_initializer=tf.random_normal_initializer
             )
 

@@ -4,8 +4,8 @@ import numpy as np
 import tensorflow as tf
 
 
-LEARNING_RATE = 1e-4
-MAX_EPOCHES = int(1e4)
+LEARNING_RATE = 5e-5
+MAX_EPOCHES = int(1e6)
 
 
 class FullyConnected(object):
@@ -15,10 +15,16 @@ class FullyConnected(object):
         logger.setLevel(logging.INFO)
 
         formatter = logging.Formatter('%(asctime)s\t%(message)s')
+
         stdout_handler = logging.StreamHandler(sys.stdout)
-        stdout_handler.setLevel(logging.DEBUG)
+        stdout_handler.setLevel(logging.INFO)
         stdout_handler.setFormatter(formatter)
         logger.addHandler(stdout_handler)
+
+        file_handler = logging.FileHandler('logs/%s.log' % name)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
         self.logger = logger
         self.name = name
@@ -33,6 +39,7 @@ class FullyConnected(object):
         self.max_epoches = max_epoches
         self.sess = tf.Session()
 
+        self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
         self.X = tf.placeholder(tf.float32, [None, self.feature_dim], 'obs')
         self.Y = tf.placeholder(tf.int32, [None], 'label')
 
@@ -40,7 +47,7 @@ class FullyConnected(object):
             self.logits_ = tf.layers.dense(
                 self.X,
                 self.n_classes,
-                activation=tf.nn.sigmoid,
+                # activation=tf.nn.sigmoid,
                 kernel_initializer=tf.random_normal_initializer
             )
 
@@ -49,18 +56,19 @@ class FullyConnected(object):
             labels=self.Y
         ))
 
-        self.opt_ = tf.train.GradientDescentOptimizer(self.lr).minimize(self.loss_)
+        self.opt_ = tf.train.GradientDescentOptimizer(self.LR).minimize(self.loss_)
         self.sess.run(tf.global_variables_initializer())
 
     def train(self):
         for ep in range(self.max_epoches):
             loss, _ = self.sess.run([self.loss_, self.opt_], feed_dict={
                 self.X: self.train_data,
-                self.Y: self.train_label
+                self.Y: self.train_label,
+                self.LR: self.lr * (1 - ep/self.max_epoches)  # learning rate decay
             })
-            if ep % (self.max_epoches//100) == 0:
+            if ep % 10 == 0:
                 if self.to_test:
-                    self.logger.info('ep:%i\tloss:%f\tacc:%f' % (ep, loss, self.test()))
+                    self.logger.info('ep:%i\t loss:%f\t acc:%f' % (ep, loss, self.test()))
                 else:
                     # self.logger.info('ep:%i\tloss:%f' % (ep, loss))
                     print('ep:%i\tloss:%f' % (ep, loss))

@@ -12,7 +12,7 @@ class FullyConnected(object):
     def __init__(self, name, logger, lr, lr_decay, n_classes, max_epoches, train_data, train_label,
                  test_data=None, test_label=None, seed=0):
         np.random.seed(seed)
-        tf.random.set_random_seed(seed)
+        tf.set_random_seed(seed)
 
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s\t%(message)s')

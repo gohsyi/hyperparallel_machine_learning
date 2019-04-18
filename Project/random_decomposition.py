@@ -14,6 +14,7 @@ def parse_arg():
     parser.add_argument('-n', type=int, default=3)
     parser.add_argument('-lr', type=float, default=5e-5)
     parser.add_argument('-lr_decay', type=bool, default=False)
+    parser.add_argument('-serial', action='store_true', default=False)
     parser.add_argument('-n_classes', type=int, default=4)
     parser.add_argument('-max_epoches', type=int, default=int(1e6))
     parser.add_argument('-train_data', type=str, default='train_de')
@@ -57,6 +58,34 @@ def decomposition(args, data1, label1, data0, label0, c):
                 train_label=(l1 + l0)))
     return models
 
+"""
+train only one model
+"""
+def train_one_model(model):
+    model.train()
+
+
+"""
+train our models serially
+"""
+def train(args, models):
+    for c in range(args.n_classes):
+        for m in models[c]:
+            m.train()
+
+
+"""
+train our models in parallel
+"""
+def train_in_parallel(args, models):
+    processes = []
+    for c in range(args.n_classes):
+        for m in models[c]:
+            processes.append(Process(target=train_one_model, args=(m,)))
+            processes[-1].start()
+    for p in processes:
+        p.join()
+
 
 def main():
     args = parse_arg()
@@ -71,7 +100,6 @@ def main():
     train_label = empty_list(args.n_classes, 2)
 
     models = []
-
     for c in range(args.n_classes):
         for d, l in zip(train_d, train_l):
             if l == c:
@@ -82,11 +110,16 @@ def main():
                 train_label[c][1].append(0)
         models.append(decomposition(args, train_data[c][0], train_label[c][0], train_data[c][1], train_label[c][1], c))
 
+    # training
+    if args.serial:
+        train(args, models)
+    else:
+        train_in_parallel(args, models)
+
     predicts = []
     for c in range(args.n_classes):
         results = []
         for m in models[c]:
-            m.train()
             results.append(m.classify(test_d))
         _results = []
         for i in range(0, len(results), args.n):

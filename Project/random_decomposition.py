@@ -6,6 +6,7 @@ import tensorflow as tf
 from fully_connected import FullyConnected
 from utils import empty_list
 from multiprocessing import Process
+import logging
 
 
 def parse_arg():
@@ -46,6 +47,7 @@ def decomposition(args, data1, label1, data0, label0):
         for d0, l0 in zip(_data0, _label0):
             models.append(FullyConnected(
                 name='fc%i' % len(models),
+                logger=logging.getLogger(),
                 lr=args.lr,
                 n_classes=2,
                 max_epoches=args.max_epoches,

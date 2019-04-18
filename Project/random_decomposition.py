@@ -26,7 +26,7 @@ def parse_arg():
 """
 divide data from this class and from other class into $n$ parts respectively
 """
-def decomposition(args, data1, label1, data0, label0):
+def decomposition(args, data1, label1, data0, label0, c):
     _data1 = empty_list(args.n)
     _label1 = empty_list(args.n)
     _data0 = empty_list(args.n)
@@ -43,11 +43,12 @@ def decomposition(args, data1, label1, data0, label0):
         _label1[r].append(l)
 
     models = []
-    for d1, l1 in zip(_data1, _label1):
-        for d0, l0 in zip(_data0, _label0):
+    for i, (d1, l1) in enumerate(zip(_data1, _label1)):
+        for j, (d0, l0) in enumerate(zip(_data0, _label0)):
+            name = '%i_%i_%i' % (c, i, j)
             models.append(FullyConnected(
-                name='fc%i' % len(models),
-                logger=logging.getLogger(),
+                name=name,
+                logger=logging.getLogger(name),
                 lr=args.lr,
                 n_classes=2,
                 max_epoches=args.max_epoches,
@@ -78,8 +79,7 @@ def main():
             else:
                 train_data[c][1].append(d)
                 train_label[c][1].append(0)
-        with tf.variable_scope('class%i'%c):
-            models.append(decomposition(args, train_data[c][0], train_label[c][0], train_data[c][1], train_label[c][1]))
+        models.append(decomposition(args, train_data[c][0], train_label[c][0], train_data[c][1], train_label[c][1], c))
 
     predicts = []
     for c in range(args.n_classes):

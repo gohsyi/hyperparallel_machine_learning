@@ -9,7 +9,10 @@ MAX_EPOCHES = int(1e6)
 
 
 class FullyConnected(object):
-    def __init__(self, name, logger, lr, n_classes, max_epoches, train_data, train_label, test_data=None, test_label=None):
+    def __init__(self, name, logger, lr, n_classes, max_epoches, train_data, train_label, test_data=None, test_label=None, seed=0):
+        np.random.seed(seed)
+        tf.random.set_random_seed(seed)
+
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s\t%(message)s')
 
@@ -44,7 +47,6 @@ class FullyConnected(object):
             self.logits_ = tf.layers.dense(
                 self.X,
                 self.n_classes,
-                # activation=tf.nn.sigmoid,
                 kernel_initializer=tf.random_normal_initializer
             )
 
@@ -67,9 +69,7 @@ class FullyConnected(object):
                 if self.to_test:
                     self.logger.info('ep:%i\t loss:%f\t acc:%f' % (ep, loss, self.test()))
                 else:
-                    # self.logger.info('ep:%i\tloss:%f' % (ep, loss))
-                    print('ep:%i\tloss:%f' % (ep, loss))
-        # self.logger.info('model %s finished training' % self.name)
+                    self.logger.info('ep:%i\tloss:%f' % (ep, loss))
         print('model %s finished training' % self.name)
 
     def test(self):
@@ -92,7 +92,17 @@ def main():
     test_de = data['test_de']
     test_label_eeg = data['test_label_eeg']
     
-    model = FullyConnected('fully_connected', logging.getLogger(), LEARNING_RATE, 4, MAX_EPOCHES, train_de, train_label_eeg, test_de, test_label_eeg)
+    model = FullyConnected(
+        name='fully_connected',
+        logger=logging.getLogger('fully_connected'),
+        lr=LEARNING_RATE,
+        n_classes=4,
+        max_epoches=MAX_EPOCHES,
+        train_data=train_de,
+        train_label=train_label_eeg,
+        test_data=test_de,
+        test_label=test_label_eeg
+    )
     model.train()
 
 

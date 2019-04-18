@@ -11,9 +11,9 @@ from multiprocessing import Process
 def parse_arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', type=int, default=3)
-    parser.add_argument('-lr', type=float, default=1e-5)
+    parser.add_argument('-lr', type=float, default=5e-5)
     parser.add_argument('-n_classes', type=int, default=4)
-    parser.add_argument('-max_epoches', type=int, default=int(1e4))
+    parser.add_argument('-max_epoches', type=int, default=int(1e6))
     parser.add_argument('-train_data', type=str, default='train_de')
     parser.add_argument('-train_label', type=str, default='train_label_eeg')
     parser.add_argument('-test_data', type=str, default='test_de')
@@ -63,8 +63,6 @@ def main():
     test_d = data[args.test_data]
     test_l = data[args.test_label]
 
-    predicts = empty_list(args.n_classes)
-
     train_data = empty_list(args.n_classes, 2)
     train_label = empty_list(args.n_classes, 2)
 
@@ -81,7 +79,8 @@ def main():
         with tf.variable_scope('class%i'%c):
             models.append(decomposition(args, train_data[c][0], train_label[c][0], train_data[c][1], train_label[c][1]))
 
-    for c in range(len(models)):
+    predicts = []
+    for c in range(args.n_classes):
         results = []
         for m in models[c]:
             m.train()
@@ -90,9 +89,9 @@ def main():
         for i in range(0, len(results), args.n):
             _results.append(np.min(results[i:i+args.n], axis=0))
         results = np.max(_results, axis=0)
-        predicts.append(results * c)  # 0->0, 1->c
+        predicts.append(results * (c+1))  # 0->0, 1->(c+1)
 
-    acc = np.count_nonzero(test_l == np.argmax(predicts, axis=0))
+    acc = np.count_nonzero(test_l[:, 0] + 1 == np.argmax(predicts, axis=0)) / test_l.shape[0]
     print('acc =', acc)
 
 

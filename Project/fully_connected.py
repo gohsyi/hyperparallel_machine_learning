@@ -2,18 +2,15 @@ import sys
 import scipy.io as sio
 import numpy as np
 import tensorflow as tf
-
+import logging
 
 LEARNING_RATE = 5e-5
 MAX_EPOCHES = int(1e6)
 
 
 class FullyConnected(object):
-    def __init__(self, name, lr, n_classes, max_epoches, train_data, train_label, test_data=None, test_label=None):
-        import logging
-        logger = logging.getLogger()
+    def __init__(self, name, logger, lr, n_classes, max_epoches, train_data, train_label, test_data=None, test_label=None):
         logger.setLevel(logging.INFO)
-
         formatter = logging.Formatter('%(asctime)s\t%(message)s')
 
         stdout_handler = logging.StreamHandler(sys.stdout)
@@ -94,8 +91,8 @@ def main():
     train_label_eeg = data['train_label_eeg']
     test_de = data['test_de']
     test_label_eeg = data['test_label_eeg']
-
-    model = FullyConnected('fully_connected', LEARNING_RATE, 4, MAX_EPOCHES, train_de, train_label_eeg, test_de, test_label_eeg)
+    
+    model = FullyConnected('fully_connected', logging.getLogger(), LEARNING_RATE, 4, MAX_EPOCHES, train_de, train_label_eeg, test_de, test_label_eeg)
     model.train()
 
 

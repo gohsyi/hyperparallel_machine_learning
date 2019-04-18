@@ -13,14 +13,14 @@ def parse_arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', type=int, default=3)
     parser.add_argument('-lr', type=float, default=5e-5)
+    parser.add_argument('-lr_decay', type=bool, default=False)
     parser.add_argument('-n_classes', type=int, default=4)
     parser.add_argument('-max_epoches', type=int, default=int(1e6))
     parser.add_argument('-train_data', type=str, default='train_de')
     parser.add_argument('-train_label', type=str, default='train_label_eeg')
     parser.add_argument('-test_data', type=str, default='test_de')
     parser.add_argument('-test_label', type=str, default='test_label_eeg')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 """
@@ -50,6 +50,7 @@ def decomposition(args, data1, label1, data0, label0, c):
                 name=name,
                 logger=logging.getLogger(name),
                 lr=args.lr,
+                lr_decay=args.lr_decay,
                 n_classes=2,
                 max_epoches=args.max_epoches,
                 train_data=(d1 + d0),

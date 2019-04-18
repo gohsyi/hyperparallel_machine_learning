@@ -9,7 +9,8 @@ MAX_EPOCHES = int(1e6)
 
 
 class FullyConnected(object):
-    def __init__(self, name, logger, lr, n_classes, max_epoches, train_data, train_label, test_data=None, test_label=None, seed=0):
+    def __init__(self, name, logger, lr, lr_decay, n_classes, max_epoches, train_data, train_label,
+                 test_data=None, test_label=None, seed=0):
         np.random.seed(seed)
         tf.random.set_random_seed(seed)
 
@@ -36,6 +37,7 @@ class FullyConnected(object):
         self.feature_dim = self.train_data.shape[-1]
         self.n_classes = n_classes
         self.lr = lr
+        self.lr_decay = lr_decay
         self.max_epoches = max_epoches
         self.sess = tf.Session()
 
@@ -60,10 +62,11 @@ class FullyConnected(object):
 
     def train(self):
         for ep in range(self.max_epoches):
+            lr = self.lr * (1 - ep/self.max_epoches) if self.lr_decay else self.lr
             loss, _ = self.sess.run([self.loss_, self.opt_], feed_dict={
                 self.X: self.train_data,
                 self.Y: self.train_label,
-                self.LR: self.lr * (1 - ep/self.max_epoches)  # learning rate decay
+                self.LR: lr
             })
             if ep % 10 == 0:
                 if self.to_test:
@@ -96,6 +99,7 @@ def main():
         name='fully_connected',
         logger=logging.getLogger('fully_connected'),
         lr=LEARNING_RATE,
+        lr_decay=False,
         n_classes=4,
         max_epoches=MAX_EPOCHES,
         train_data=train_de,

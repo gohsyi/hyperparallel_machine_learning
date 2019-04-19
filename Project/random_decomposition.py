@@ -34,7 +34,6 @@ def decomposition(c):
     train_d = data[args.train_data]
     train_l = data[args.train_label]
     test_d = data[args.test_data]
-    test_l = data[args.test_label]
 
     data0 = []
     label0 = []
@@ -86,12 +85,14 @@ def decomposition(c):
     return np.max(max_labels, axis=0)
 
 
-if not os.path.exists('logs'):
-    os.mkdir('logs')
 args = parse_arg()
 
 
 def main():
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+
+    """ training """
     if args.serial:
         results = []
         for c in range(args.n_classes):
@@ -103,7 +104,7 @@ def main():
     """ collect """
     test_l = sio.loadmat('data.mat')[args.test_label]
     predicts = np.argmax(results, axis=0)
-    acc = np.count_nonzero(test_l[:, 0] + 1 == np.argmax(predicts, axis=0)) / test_l.shape[0]
+    acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
     print('acc =', acc)
 
 

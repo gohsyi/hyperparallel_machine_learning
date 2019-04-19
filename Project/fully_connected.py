@@ -10,15 +10,15 @@ MAX_EPOCHES = int(1e6)
 
 class FullyConnected(object):
     def __init__(self, name, lr, lr_decay, n_classes, max_epoches, train_data, train_label,
-                 test_data=None, test_label=None, seed=0, to_test=False):
+                 test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
 
-        assert to_test is False or test_data is not None
+        assert validate is False or test_data is not None
 
         self.name = name
         self.logger = self.getLogger()
-        self.to_test = to_test
+        self.validate = validate
         self.train_data = np.array(train_data)
         self.train_label = np.squeeze(train_label)
         self.test_data = np.array(test_data)
@@ -53,7 +53,7 @@ class FullyConnected(object):
     def getLogger(self):
         logger = logging.getLogger(self.name)
         logger.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(asctime)s\t%(message)s\tmodel:' + self.name)
+        formatter = logging.Formatter('%(asctime)s\tmodel:{}\t%(message)s'.format(self.name))
 
         stdout_handler = logging.StreamHandler(sys.stdout)
         stdout_handler.setLevel(logging.INFO)
@@ -68,7 +68,6 @@ class FullyConnected(object):
         return logger
 
     def train(self):
-        print('1')
         for ep in range(self.max_epoches):
             lr = self.lr * (1 - ep/self.max_epoches) if self.lr_decay else self.lr
             loss, _ = self.sess.run([self.loss_, self.opt_], feed_dict={
@@ -77,20 +76,21 @@ class FullyConnected(object):
                 self.LR: lr
             })
             if ep % 10 == 0:
-                if self.to_test:
-                    self.logger.info('ep:%i\t loss:%f\t acc:%f' % (ep, loss, self.test()))
+                if self.validate:
+                    self.logger.info('ep:%i\t loss:%f\t acc:%f' % (ep, loss, self.val()))
                 else:
                     self.logger.info('ep:%i\tloss:%f' % (ep, loss))
-                    print('ep:%i\tloss:%f' % (ep, loss))
         print('model %s finished training' % self.name)
 
     def test(self):
         logits = self.sess.run(self.logits_, feed_dict={self.X: self.test_data})
         labels = np.argmax(logits, axis=-1)
-        if self.test_label is not None:
-            return np.count_nonzero(labels==self.test_label) / self.test_label.size
-        else:
-            return labels
+        return labels
+
+    def val(self):
+        logits = self.sess.run(self.logits_, feed_dict={self.X: self.test_data})
+        labels = np.argmax(logits, axis=-1)
+        return np.count_nonzero(labels==self.test_label) / self.test_label.size
 
     def classify(self, X):
         logits = self.sess.run(self.logits_, feed_dict={self.X: X})
@@ -116,7 +116,7 @@ def main():
         train_label=train_label_eeg,
         test_data=test_de,
         test_label=test_label_eeg,
-        to_test=True
+        validate=True
     )
     model.train()
 

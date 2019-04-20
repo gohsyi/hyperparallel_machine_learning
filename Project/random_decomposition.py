@@ -68,6 +68,7 @@ def decomposition(c):
         min_labels = []
         for j, (d0, l0) in enumerate(zip(_data0, _label0)):
             model = FullyConnected(
+                folder=folder,
                 name='%i_%i_%i' % (c, i, j),
                 lr=args.lr,
                 lr_decay=args.lr_decay,
@@ -87,10 +88,19 @@ def decomposition(c):
 
 args = parse_arg()
 
+folder = os.path.join('logs', 'ovr_n:{}_lr:{}{}ep:{}{}'.format(
+    args.n,
+    args.lr,
+    '_decay_' if args.lr_decay else '_',
+    args.max_epoches,
+    '_debug' if args.serial else '',
+))
+
+random.seed(args.n)
 
 def main():
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
     """ training """
     if args.serial:

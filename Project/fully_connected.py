@@ -1,4 +1,5 @@
 import sys
+import os
 import scipy.io as sio
 import numpy as np
 import tensorflow as tf
@@ -9,13 +10,14 @@ MAX_EPOCHES = int(1e6)
 
 
 class FullyConnected(object):
-    def __init__(self, name, lr, lr_decay, n_classes, max_epoches, train_data, train_label,
+    def __init__(self, folder, name, lr, lr_decay, n_classes, max_epoches, train_data, train_label,
                  test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
 
         assert validate is False or test_data is not None
 
+        self.folder = folder
         self.name = name
         self.logger = self.getLogger()
         self.validate = validate
@@ -47,10 +49,13 @@ class FullyConnected(object):
                 labels=self.Y
             ))
             self.opt_ = tf.train.GradientDescentOptimizer(self.LR).minimize(self.loss_)
-
+            self.saver = tf.train.Saver()
             self.sess.run(tf.global_variables_initializer())
 
     def getLogger(self):
+        if not os.path.exists(self.folder):
+            os.mkdir(self.folder)
+
         logger = logging.getLogger(self.name)
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s\tmodel:{}\t%(message)s'.format(self.name))
@@ -60,7 +65,7 @@ class FullyConnected(object):
         stdout_handler.setFormatter(formatter)
         logger.addHandler(stdout_handler)
 
-        file_handler = logging.FileHandler('logs/%s.log' % self.name)
+        file_handler = logging.FileHandler(os.path.join(self.folder, '{}.log'.format(self.name)))
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
@@ -81,6 +86,7 @@ class FullyConnected(object):
                 else:
                     self.logger.info('ep:%i\tloss:%f' % (ep, loss))
         print('model %s finished training' % self.name)
+        self.save()
 
     def test(self):
         logits = self.sess.run(self.logits_, feed_dict={self.X: self.test_data})
@@ -97,6 +103,9 @@ class FullyConnected(object):
         labels = np.argmax(logits, axis=-1)
         return labels
 
+    def save(self):
+        self.saver.save(self.sess, os.path.join(self.folder, '%s.ckpt'%self.name))
+
 
 def main():
     data = sio.loadmat('data.mat')
@@ -105,8 +114,13 @@ def main():
     train_label_eeg = data['train_label_eeg']
     test_de = data['test_de']
     test_label_eeg = data['test_label_eeg']
+
+    folder = os.path.join('logs', 'fully_connected')
+    if not os.path.exists(folder):
+        os.makedirs(folder)
     
     model = FullyConnected(
+        folder=folder,
         name='fully_connected',
         lr=LEARNING_RATE,
         lr_decay=False,

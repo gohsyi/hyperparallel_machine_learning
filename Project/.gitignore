@@ -1,4 +1,7 @@
-logs/
-data.mat
-*.pdf
 .idea/
+
+logs/
+
+*.pdf
+
+data/*.csv

@@ -21,7 +21,7 @@ def parse_arg():
     parser.add_argument('-train_l', type=str, default='train_label_eeg')
     parser.add_argument('-test_d', type=str, default='test_de')
     parser.add_argument('-test_l', type=str, default='test_label_eeg')
-    parser.add_argument('-n_processes', type=int, default=4)
+    parser.add_argument('-n_processes', type=int, default=8)
 
     return parser.parse_args()
 
@@ -49,13 +49,13 @@ def decomposition(c):
             l0[r].append(0)
 
     for i, d in enumerate(d1):
-        np.savetxt(os.path.join('data', 'd1_{}.csv'.format(i)), d, delimiter=',')
+        np.savetxt(os.path.join('data', 'd1_{}_{}.csv'.format(c, i)), d, delimiter=',')
     for i, l in enumerate(l1):
-        np.savetxt(os.path.join('data', 'l1_{}.csv'.format(i)), l, delimiter=',')
+        np.savetxt(os.path.join('data', 'l1_{}_{}.csv'.format(c, i)), l, delimiter=',')
     for i, d in enumerate(d0):
-        np.savetxt(os.path.join('data', 'd0_{}.csv'.format(i)), d, delimiter=',')
+        np.savetxt(os.path.join('data', 'd0_{}_{}.csv'.format(c, i)), d, delimiter=',')
     for i, l in enumerate(l0):
-        np.savetxt(os.path.join('data', 'l0_{}.csv'.format(i)), l, delimiter=',')
+        np.savetxt(os.path.join('data', 'l0_{}_{}.csv'.format(c, i)), l, delimiter=',')
 
 
 """ 
@@ -65,13 +65,13 @@ def train(name):
     c, i, j = map(lambda x: int(x), name.split('_'))
 
     train_d = np.concatenate([
-        np.loadtxt(os.path.join('data', 'd1_{}.csv'.format(i)), delimiter=','),
-        np.loadtxt(os.path.join('data', 'd0_{}.csv'.format(j)), delimiter=','),
+        np.loadtxt(os.path.join('data', 'd1_{}_{}.csv'.format(c, i)), delimiter=','),
+        np.loadtxt(os.path.join('data', 'd0_{}_{}.csv'.format(c, j)), delimiter=','),
     ])
 
     train_l = np.concatenate([
-        np.loadtxt(os.path.join('data', 'l1_{}.csv'.format(i)), delimiter=','),
-        np.loadtxt(os.path.join('data', 'l0_{}.csv'.format(j)), delimiter=','),
+        np.loadtxt(os.path.join('data', 'l1_{}_{}.csv'.format(c, i)), delimiter=','),
+        np.loadtxt(os.path.join('data', 'l0_{}_{}.csv'.format(c, j)), delimiter=','),
     ])
 
     test_d = sio.loadmat(os.path.join('data', 'data.mat'))[args.test_d]
@@ -127,7 +127,7 @@ def main():
         results = pool.map(train, models)
 
     """ collect """
-    test_l = sio.loadmat('data.mat')[args.test_label]
+    test_l = sio.loadmat(os.path.join('data', 'data.mat'))[args.test_l]
 
     # min
     min_results = []

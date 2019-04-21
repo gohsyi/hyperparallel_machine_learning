@@ -1,6 +1,7 @@
 import os
 import random
 import argparse
+import logging
 import numpy as np
 import scipy.io as sio
 from fully_connected import FullyConnected
@@ -94,7 +95,7 @@ def train(name):
 
 args = parse_arg()
 
-folder = os.path.join('logs', 'ovr_n:{}_lr:{}{}ep:{}{}'.format(
+folder = os.path.join('logs', 'ovr_n{}_lr{}{}ep{}{}'.format(
     args.n,
     args.lr,
     '_decay_' if args.lr_decay else '_',
@@ -140,9 +141,13 @@ def main():
         max_results.append(np.max(min_results[i:i+args.n], axis=0))
 
     predicts = np.argmax(max_results, axis=0)
+    predicts.tofile(os.path.join(folder, 'predicts.csv'), sep=',')
 
     acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
-    print('acc =', acc)
+
+    with open(os.path.join(folder, 'results.log'), 'w') as f:
+        f.write(args)
+        f.write('\nacc = {}'.format(acc))
 
 
 if __name__ == '__main__':

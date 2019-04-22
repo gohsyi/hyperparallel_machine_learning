@@ -15,7 +15,7 @@ def parse_arg():
     parser.add_argument('-hidsz', type=str, default='128')
     parser.add_argument('-ac_fn', type=str, default='relu', help='relu/elu/sigmoid/tanh')
     parser.add_argument('-seed', type=int, default=0)
-    parser.add_argument('-lr', type=float, default=5e-5)
+    parser.add_argument('-lr', type=float, default=1e-4)
     parser.add_argument('-lr_decay', type=bool, default=False)
     parser.add_argument('-serial', action='store_true', default=False)
     parser.add_argument('-n_classes', type=int, default=4)

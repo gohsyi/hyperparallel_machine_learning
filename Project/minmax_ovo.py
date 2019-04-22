@@ -131,7 +131,7 @@ def main():
 
     acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
 
-    logger.info('acc = {}'.format(acc))
+    logger.info('accuracy = {}'.format(acc))
 
 
 if __name__ == '__main__':

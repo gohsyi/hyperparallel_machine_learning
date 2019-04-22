@@ -77,7 +77,7 @@ def train(name):
         seed=args.seed
     )
     model.train()
-    return model.test()
+    return model.classify()
 
 
 args = parse_arg()
@@ -130,6 +130,16 @@ def main():
     for i in range(0, len(min_results), args.n):
         max_results.append(np.max(min_results[i:i+args.n], axis=0))
 
+    predicts = empty_list(args.n_classes)
+
+    i = 0
+    for c1 in range(args.n_classes):
+        for c0 in range(c1):
+            predicts[c1].append(max_results[i])
+            predicts[c0].append(1 - max_results[i])
+            i = i + 1
+
+    predicts = np.max(predicts, axis=1)
     predicts = np.argmax(max_results, axis=0)
     predicts.tofile(os.path.join(folder, 'predicts.csv'), sep=',')
 

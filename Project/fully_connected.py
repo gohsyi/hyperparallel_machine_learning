@@ -49,6 +49,7 @@ class FullyConnected(object):
                 logits=self.logits_,
                 labels=self.Y
             ))
+            self.soft_ = tf.nn.softmax(self.logits_)
             self.opt_ = tf.train.GradientDescentOptimizer(self.LR).minimize(self.loss_)
             self.saver = tf.train.Saver()
             self.sess.run(tf.global_variables_initializer())
@@ -79,10 +80,11 @@ class FullyConnected(object):
         labels = np.argmax(logits, axis=-1)
         return np.count_nonzero(labels==self.test_label) / self.test_label.size
 
-    def classify(self, X):
-        logits = self.sess.run(self.logits_, feed_dict={self.X: X})
-        labels = np.argmax(logits, axis=-1)
-        return labels
+    def classify(self):
+        return self.sess.run(self.soft_, feed_dict={self.X: self.test_data})[:, 1]  # p(y=1)
+        # logits = self.sess.run(self.logits_, feed_dict={self.X: X})
+        # labels = np.argmax(logits, axis=-1)
+        # return labels
 
     def save(self):
         self.saver.save(self.sess, os.path.join(self.folder, '%s.ckpt'%self.name))

@@ -93,7 +93,8 @@ def train(name):
         seed=args.seed
     )
     model.train()
-    return model.test()
+    logits = model.classify()
+    return logits
 
 
 args = parse_arg()

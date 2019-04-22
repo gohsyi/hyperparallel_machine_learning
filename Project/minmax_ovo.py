@@ -24,6 +24,7 @@ def parse_arg():
     parser.add_argument('-test_d', type=str, default='test_de')
     parser.add_argument('-test_l', type=str, default='test_label_eeg')
     parser.add_argument('-n_processes', type=int, default=8)
+    parser.add_argument('-gpu', type=str, default='-1')
 
     return parser.parse_args()
 
@@ -95,6 +96,9 @@ def main():
     random.seed(args.n)
     logger = getLogger('logs', 'ovo')
     logger.info(args)
+
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     if not os.path.exists(folder):
         os.makedirs(folder)

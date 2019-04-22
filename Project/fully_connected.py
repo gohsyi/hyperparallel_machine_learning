@@ -1,9 +1,8 @@
-import sys
 import os
 import scipy.io as sio
 import numpy as np
 import tensorflow as tf
-import logging
+from utils import getLogger
 
 LEARNING_RATE = 5e-5
 MAX_EPOCHES = int(1e6)
@@ -19,7 +18,7 @@ class FullyConnected(object):
 
         self.folder = folder
         self.name = name
-        self.logger = self.getLogger()
+        self.logger = getLogger(folder, name)
         self.validate = validate
         self.train_data = np.array(train_data)
         self.train_label = np.squeeze(train_label)
@@ -51,26 +50,6 @@ class FullyConnected(object):
             self.opt_ = tf.train.GradientDescentOptimizer(self.LR).minimize(self.loss_)
             self.saver = tf.train.Saver()
             self.sess.run(tf.global_variables_initializer())
-
-    def getLogger(self):
-        if not os.path.exists(self.folder):
-            os.mkdir(self.folder)
-
-        logger = logging.getLogger(self.name)
-        logger.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(asctime)s\tmodel:{}\t%(message)s'.format(self.name))
-
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        stdout_handler.setLevel(logging.INFO)
-        stdout_handler.setFormatter(formatter)
-        logger.addHandler(stdout_handler)
-
-        file_handler = logging.FileHandler(os.path.join(self.folder, '{}.log'.format(self.name)))
-        file_handler.setLevel(logging.INFO)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-
-        return logger
 
     def train(self):
         for ep in range(self.max_epoches):

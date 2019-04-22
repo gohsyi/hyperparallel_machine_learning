@@ -29,7 +29,7 @@ def parse_arg():
 
     args = parser.parse_args()
 
-    abstract = 'ovr_n{}_h{}_{}_lr{}{}ep{}{}'.format(
+    abstract = 'n{}_h{}_{}_lr{}{}ep{}{}'.format(
         args.n,
         args.hidsz,
         args.ac_fn,

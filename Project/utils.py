@@ -1,7 +1,8 @@
 import os
 import sys
+import time
 import logging
-
+from contextlib import contextmanager
 
 """
 returns an empty list with shape (d0, d1, d2)
@@ -37,3 +38,11 @@ def getLogger(folder, name):
     logger.addHandler(file_handler)
 
     return logger
+
+
+@contextmanager
+def timed(msg):
+    print(msg)
+    tstart = time.time()
+    yield
+    print('done in %.3f seconds' % (time.time() - tstart))

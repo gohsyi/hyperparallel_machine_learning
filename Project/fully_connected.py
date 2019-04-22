@@ -2,7 +2,7 @@ import os
 import scipy.io as sio
 import numpy as np
 import tensorflow as tf
-from utils import getLogger
+from utils import getLogger, timed
 
 LEARNING_RATE = 5e-5
 MAX_EPOCHES = int(1e6)
@@ -71,7 +71,8 @@ class FullyConnected(object):
         self.save()
 
     def test(self):
-        logits = self.sess.run(self.logits_, feed_dict={self.X: self.test_data})
+        with timed('testing ...'):
+            logits = self.sess.run(self.logits_, feed_dict={self.X: self.test_data})
         labels = np.argmax(logits, axis=-1)
         return labels
 
@@ -81,10 +82,9 @@ class FullyConnected(object):
         return np.count_nonzero(labels==self.test_label) / self.test_label.size
 
     def classify(self):
-        return self.sess.run(self.soft_, feed_dict={self.X: self.test_data})[:, 1]  # p(y=1)
-        # logits = self.sess.run(self.logits_, feed_dict={self.X: X})
-        # labels = np.argmax(logits, axis=-1)
-        # return labels
+        with timed('testing ...'):
+            logits = self.sess.run(self.soft_, feed_dict={self.X: self.test_data})[:, 1]  # p(y=1)
+        return logits
 
     def save(self):
         self.saver.save(self.sess, os.path.join(self.folder, '%s.ckpt'%self.name))

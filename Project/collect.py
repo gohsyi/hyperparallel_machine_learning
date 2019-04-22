@@ -24,11 +24,11 @@ for root, dirs, files in os.walk('logs'):
             if len(loss) > 0:
                 plt.plot(loss)
                 plt.title('loss')
-                plt.savefig(str(p.split('.')[0]) + '_loss.jpg')
+                plt.savefig('.'.join(p.split('.')[:-1]) + '_loss.jpg')
                 plt.cla()
 
             if len(acc) > 0:
                 plt.plot(acc)
                 plt.title('acc')
-                plt.savefig(str(p.split('.')[0]) + '_acc.jpg')
+                plt.savefig('.'.join(p.split('.')[:-1]) + '_acc.jpg')
                 plt.cla()

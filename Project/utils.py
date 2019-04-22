@@ -27,7 +27,19 @@ def parse_arg():
     parser.add_argument('-n_processes', type=int, default=8)
     parser.add_argument('-gpu', type=str, default='-1')
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    abstract = 'ovr_n{}_h{}_{}_lr{}{}ep{}{}'.format(
+        args.n,
+        args.hidsz,
+        args.ac_fn,
+        args.lr,
+        '_decay_' if args.lr_decay else '_',
+        args.max_epoches,
+        '_debug' if args.serial else '',
+    )
+
+    return args, abstract
 
 
 """
@@ -67,8 +79,7 @@ def getLogger(folder, name):
 
 
 @contextmanager
-def timed(msg):
-    print(msg)
+def timed(msg, logger):
     tstart = time.time()
     yield
-    print('done in %.3f seconds' % (time.time() - tstart))
+    logger.info('%s done in %.3f seconds' % (msg, time.time() - tstart))

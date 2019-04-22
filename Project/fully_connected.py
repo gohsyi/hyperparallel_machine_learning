@@ -74,23 +74,23 @@ class FullyConnected(object):
             self.sess.run(tf.global_variables_initializer())
 
     def train(self):
-        for ep in range(self.max_epoches):
-            lr = self.lr * (1 - ep/self.max_epoches) if self.lr_decay else self.lr
-            loss, _ = self.sess.run([self.loss, self.opt], feed_dict={
-                self.X: self.train_data,
-                self.Y: self.train_label,
-                self.LR: lr
-            })
-            if ep % 10 == 0:
-                if self.validate:
-                    self.logger.info('ep:%i\t loss:%f\t acc:%f' % (ep, loss, self.val()))
-                else:
-                    self.logger.info('ep:%i\tloss:%f' % (ep, loss))
-        print('model %s finished training' % self.name)
+        with timed('training %i epoches' % self.max_epoches, self.logger):
+            for ep in range(self.max_epoches):
+                lr = self.lr * (1 - ep/self.max_epoches) if self.lr_decay else self.lr
+                loss, _ = self.sess.run([self.loss, self.opt], feed_dict={
+                    self.X: self.train_data,
+                    self.Y: self.train_label,
+                    self.LR: lr
+                })
+                if ep % 10 == 0:
+                    if self.validate:
+                        self.logger.info('ep:%i\t loss:%f\t acc:%f' % (ep, loss, self.val()))
+                    else:
+                        self.logger.info('ep:%i\tloss:%f' % (ep, loss))
         self.save()
 
     def test(self):
-        with timed('testing ...'):
+        with timed('testing', self.logger):
             logits = self.sess.run(self.logits, feed_dict={self.X: self.test_data})
         labels = np.argmax(logits, axis=-1)
         return labels
@@ -101,7 +101,7 @@ class FullyConnected(object):
         return np.count_nonzero(labels==self.test_label) / self.test_label.size
 
     def classify(self):
-        with timed('testing ...'):
+        with timed('test', self.logger):
             logits = self.sess.run(self.soft, feed_dict={self.X: self.test_data})[:, 1]  # p(y=1)
         return logits
 

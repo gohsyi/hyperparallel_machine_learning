@@ -61,17 +61,8 @@ def train(name):
     return model.classify()
 
 
-args = parse_arg()
-
-folder = os.path.join('logs', 'ovo_n{}_h{}_{}_lr{}{}ep{}{}'.format(
-    args.n,
-    args.hidsz,
-    args.lr,
-    args.ac_fn,
-    '_decay_' if args.lr_decay else '_',
-    args.max_epoches,
-    '_debug' if args.serial else '',
-))
+args, abstract = parse_arg()
+folder = os.path.join('logs', 'ovo_{}'.format(abstract))
 
 
 def main():

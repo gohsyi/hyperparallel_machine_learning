@@ -4,12 +4,12 @@ import numpy as np
 import tensorflow as tf
 from utils import getLogger, timed
 
-LEARNING_RATE = 5e-5
+LEARNING_RATE = 1e-4
 MAX_EPOCHES = int(1e6)
 
 
 class FullyConnected(object):
-    def __init__(self, folder, name, lr, lr_decay, n_classes, max_epoches, train_data, train_label,
+    def __init__(self, folder, name, hidsz, ac_fn, lr, lr_decay, n_classes, max_epoches, train_data, train_label,
                  test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
@@ -24,11 +24,23 @@ class FullyConnected(object):
         self.train_label = np.squeeze(train_label)
         self.test_data = np.array(test_data)
         self.test_label = np.squeeze(test_label)
+        self.hidsz = list(map(int, hidsz.split(',')))
         self.feature_dim = self.train_data.shape[-1]
         self.n_classes = n_classes
         self.lr = lr
         self.lr_decay = lr_decay
         self.max_epoches = max_epoches
+
+        if ac_fn == 'tanh':
+            self.ac_fn = tf.nn.tanh
+        elif ac_fn == 'relu':
+            self.ac_fn = tf.nn.relu
+        elif ac_fn == 'sigmoid':
+            self.ac_fn = tf.nn.sigmoid
+        elif ac_fn == 'elu':
+            self.ac_fn = tf.nn.elu
+        else:
+            raise ValueError
 
         self.graph = tf.Graph()
         config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
@@ -40,24 +52,31 @@ class FullyConnected(object):
             self.X = tf.placeholder(tf.float32, [None, self.feature_dim], 'obs')
             self.Y = tf.placeholder(tf.int32, [None], 'label')
 
-            self.logits_ = tf.layers.dense(
-                self.X,
-                self.n_classes,
+            self.hidden = [self.X]
+            for dim in self.hidsz:
+                self.hidden.append(tf.layers.dense(
+                    self.hidden[-1], dim,
+                    activation=self.ac_fn,
+                    kernel_initializer=tf.random_normal_initializer
+                ))
+            self.logits = tf.layers.dense(
+                self.hidden[-1], self.n_classes,
                 kernel_initializer=tf.random_normal_initializer
             )
-            self.loss_ = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
-                logits=self.logits_,
+
+            self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=self.logits,
                 labels=self.Y
             ))
-            self.soft_ = tf.nn.softmax(self.logits_)
-            self.opt_ = tf.train.GradientDescentOptimizer(self.LR).minimize(self.loss_)
+            self.soft = tf.nn.softmax(self.logits)
+            self.opt = tf.train.GradientDescentOptimizer(self.LR).minimize(self.loss)
             self.saver = tf.train.Saver()
             self.sess.run(tf.global_variables_initializer())
 
     def train(self):
         for ep in range(self.max_epoches):
             lr = self.lr * (1 - ep/self.max_epoches) if self.lr_decay else self.lr
-            loss, _ = self.sess.run([self.loss_, self.opt_], feed_dict={
+            loss, _ = self.sess.run([self.loss, self.opt], feed_dict={
                 self.X: self.train_data,
                 self.Y: self.train_label,
                 self.LR: lr
@@ -72,18 +91,18 @@ class FullyConnected(object):
 
     def test(self):
         with timed('testing ...'):
-            logits = self.sess.run(self.logits_, feed_dict={self.X: self.test_data})
+            logits = self.sess.run(self.logits, feed_dict={self.X: self.test_data})
         labels = np.argmax(logits, axis=-1)
         return labels
 
     def val(self):
-        logits = self.sess.run(self.logits_, feed_dict={self.X: self.test_data})
+        logits = self.sess.run(self.logits, feed_dict={self.X: self.test_data})
         labels = np.argmax(logits, axis=-1)
         return np.count_nonzero(labels==self.test_label) / self.test_label.size
 
     def classify(self):
         with timed('testing ...'):
-            logits = self.sess.run(self.soft_, feed_dict={self.X: self.test_data})[:, 1]  # p(y=1)
+            logits = self.sess.run(self.soft, feed_dict={self.X: self.test_data})[:, 1]  # p(y=1)
         return logits
 
     def save(self):
@@ -105,6 +124,8 @@ def main():
     model = FullyConnected(
         folder=folder,
         name='fully_connected',
+        hidsz='128',
+        ac_fn='relu',
         lr=LEARNING_RATE,
         lr_decay=False,
         n_classes=4,

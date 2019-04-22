@@ -1,33 +1,10 @@
 import os
-import sys
 import random
-import argparse
-import logging
 import numpy as np
 import scipy.io as sio
 from fully_connected import FullyConnected
-from utils import empty_list, getLogger
+from utils import parse_arg, empty_list, getLogger
 from multiprocessing import Pool
-
-
-def parse_arg():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-n', type=int, default=3)
-    parser.add_argument('-seed', type=int, default=0)
-    parser.add_argument('-lr', type=float, default=5e-5)
-    parser.add_argument('-lr_decay', type=bool, default=False)
-    parser.add_argument('-serial', action='store_true', default=False)
-    parser.add_argument('-n_classes', type=int, default=4)
-    parser.add_argument('-max_epoches', type=int, default=int(1e6))
-    parser.add_argument('-train_d', type=str, default='train_de')
-    parser.add_argument('-train_l', type=str, default='train_label_eeg')
-    parser.add_argument('-test_d', type=str, default='test_de')
-    parser.add_argument('-test_l', type=str, default='test_label_eeg')
-    parser.add_argument('-n_processes', type=int, default=8)
-    parser.add_argument('-gpu', type=str, default='-1')
-
-
-    return parser.parse_args()
 
 
 """
@@ -85,6 +62,8 @@ def train(name):
     model = FullyConnected(
         folder=folder,
         name=name,
+        hidsz=args.hidsz,
+        ac_fn=args.ac_fn,
         lr=args.lr,
         lr_decay=args.lr_decay,
         n_classes=2,
@@ -101,9 +80,11 @@ def train(name):
 
 args = parse_arg()
 
-folder = os.path.join('logs', 'ovr_n{}_lr{}{}ep{}{}'.format(
+folder = os.path.join('logs', 'ovr_n{}_h{}_{}_lr{}{}ep{}{}'.format(
     args.n,
+    args.hidsz,
     args.lr,
+    args.ac_fn,
     '_decay_' if args.lr_decay else '_',
     args.max_epoches,
     '_debug' if args.serial else '',

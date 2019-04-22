@@ -2,7 +2,33 @@ import os
 import sys
 import time
 import logging
+import argparse
 from contextlib import contextmanager
+
+
+"""
+argument parser
+"""
+def parse_arg():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', type=int, default=3)
+    parser.add_argument('-hidsz', type=str, default='128')
+    parser.add_argument('-ac_fn', type=str, default='relu', help='relu/elu/sigmoid/tanh')
+    parser.add_argument('-seed', type=int, default=0)
+    parser.add_argument('-lr', type=float, default=5e-5)
+    parser.add_argument('-lr_decay', type=bool, default=False)
+    parser.add_argument('-serial', action='store_true', default=False)
+    parser.add_argument('-n_classes', type=int, default=4)
+    parser.add_argument('-max_epoches', type=int, default=int(1e6))
+    parser.add_argument('-train_d', type=str, default='train_de')
+    parser.add_argument('-train_l', type=str, default='train_label_eeg')
+    parser.add_argument('-test_d', type=str, default='test_de')
+    parser.add_argument('-test_l', type=str, default='test_label_eeg')
+    parser.add_argument('-n_processes', type=int, default=8)
+    parser.add_argument('-gpu', type=str, default='-1')
+
+    return parser.parse_args()
+
 
 """
 returns an empty list with shape (d0, d1, d2)

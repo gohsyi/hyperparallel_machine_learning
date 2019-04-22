@@ -117,8 +117,8 @@ def main():
             i = i + 1
 
     predicts = np.max(predicts, axis=1)
-    predicts = np.argmax(predicts, axis=0)
     predicts.tofile(os.path.join(folder, 'predicts.csv'), sep=',')
+    predicts = np.argmax(predicts, axis=0)
 
     acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
 

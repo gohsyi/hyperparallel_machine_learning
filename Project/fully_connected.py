@@ -31,7 +31,9 @@ class FullyConnected(object):
         self.max_epoches = max_epoches
 
         self.graph = tf.Graph()
-        self.sess = tf.Session(graph=self.graph)
+        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(graph=self.graph, config=config)
 
         with self.graph.as_default():
             self.LR = tf.placeholder(tf.float32, [], 'learning_rate')

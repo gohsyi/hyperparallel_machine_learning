@@ -9,7 +9,7 @@ MAX_EPOCHES = int(1e6)
 
 
 class FullyConnected(object):
-    def __init__(self, folder, name, hidsz, ac_fn, lr, lr_decay, n_classes, max_epoches, train_data, train_label,
+    def __init__(self, folder, name, hidsz, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
                  test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
@@ -18,6 +18,7 @@ class FullyConnected(object):
 
         self.folder = folder
         self.name = name
+        self.ckpt = os.path.join(self.folder, '{}.ckpt'.format(self.name))
         self.logger = getLogger(folder, name)
         self.validate = validate
         self.train_data = np.array(train_data)
@@ -29,7 +30,6 @@ class FullyConnected(object):
         self.n_classes = n_classes
         self.lr = lr
         self.lr_decay = lr_decay
-        self.max_epoches = max_epoches
 
         if ac_fn == 'tanh':
             self.ac_fn = tf.nn.tanh
@@ -73,10 +73,10 @@ class FullyConnected(object):
             self.saver = tf.train.Saver()
             self.sess.run(tf.global_variables_initializer())
 
-    def train(self):
-        with timed('training %i epoches' % self.max_epoches, self.logger):
-            for ep in range(self.max_epoches):
-                lr = self.lr * (1 - ep/self.max_epoches) if self.lr_decay else self.lr
+    def train(self, epoches):
+        with timed('training %i epoches' % epoches, self.logger):
+            for ep in range(epoches):
+                lr = self.lr * (1 - ep/epoches) if self.lr_decay else self.lr
                 loss, _ = self.sess.run([self.loss, self.opt], feed_dict={
                     self.X: self.train_data,
                     self.Y: self.train_label,
@@ -105,8 +105,12 @@ class FullyConnected(object):
             logits = self.sess.run(self.soft, feed_dict={self.X: self.test_data})[:, 1]  # p(y=1)
         return logits
 
+    def restore(self):
+        if os.path.exists(self.ckpt):
+            self.saver.restore(self.sess, self.ckpt)
+
     def save(self):
-        self.saver.save(self.sess, os.path.join(self.folder, '%s.ckpt'%self.name))
+        self.saver.save(self.sess, self.ckpt)
 
 
 def main():
@@ -129,14 +133,13 @@ def main():
         lr=LEARNING_RATE,
         lr_decay=False,
         n_classes=4,
-        max_epoches=MAX_EPOCHES,
         train_data=train_de,
         train_label=train_label_eeg,
         test_data=test_de,
         test_label=test_label_eeg,
         validate=True
     )
-    model.train()
+    model.train(MAX_EPOCHES)
 
 
 if __name__ == '__main__':

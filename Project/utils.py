@@ -19,7 +19,7 @@ def parse_arg():
     parser.add_argument('-lr_decay', type=bool, default=False)
     parser.add_argument('-serial', action='store_true', default=False)
     parser.add_argument('-n_classes', type=int, default=4)
-    parser.add_argument('-max_epoches', type=int, default=int(1e6))
+    parser.add_argument('-max_epoches', type=int, default=int(1e5))
     parser.add_argument('-train_d', type=str, default='train_de')
     parser.add_argument('-train_l', type=str, default='train_label_eeg')
     parser.add_argument('-test_d', type=str, default='test_de')
@@ -62,18 +62,20 @@ def getLogger(folder, name):
         os.mkdir(folder)
 
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s\tmodel:{}\t%(message)s'.format(name))
 
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setLevel(logging.INFO)
-    stdout_handler.setFormatter(formatter)
-    logger.addHandler(stdout_handler)
+    if logger not in logging.Logger.manager.loggerDict:
+        logger.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s\tmodel:{}\t%(message)s'.format(name))
 
-    file_handler = logging.FileHandler(os.path.join(folder, '{}.log'.format(name)))
-    file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setLevel(logging.INFO)
+        stdout_handler.setFormatter(formatter)
+        logger.addHandler(stdout_handler)
+
+        file_handler = logging.FileHandler(os.path.join(folder, '{}.log'.format(name)))
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
     return logger
 

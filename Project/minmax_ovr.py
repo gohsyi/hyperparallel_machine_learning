@@ -67,15 +67,15 @@ def train(name):
         lr=args.lr,
         lr_decay=args.lr_decay,
         n_classes=2,
-        max_epoches=args.max_epoches,
         train_data=train_d,
         train_label=train_l,
         test_data=test_d,
         seed=args.seed
     )
-    model.train()
-    logits = model.classify()
-    return logits
+    model.restore()
+    model.train(args.max_epoches)
+
+    return model.classify()
 
 
 args, abstract = parse_arg()
@@ -103,32 +103,33 @@ def main():
         for j in range(args.n)
     ]
 
-    """ training """
-    if args.serial:
-        results = [train(model) for model in models]
-    else:
-        pool = Pool(args.n_processes)
-        results = pool.map(train, models)
+    for iter in range(10):
+        """ training """
+        if args.serial:
+            results = [train(model) for model in models]
+        else:
+            pool = Pool(args.n_processes)
+            results = pool.map(train, models)
 
-    """ collect """
-    test_l = sio.loadmat(os.path.join('data', 'data.mat'))[args.test_l]
+        """ collect """
+        test_l = sio.loadmat(os.path.join('data', 'data.mat'))[args.test_l]
 
-    # min
-    min_results = []
-    for i in range(0, len(results), args.n):
-        min_results.append(np.min(results[i:i+args.n], axis=0))
+        # min
+        min_results = []
+        for i in range(0, len(results), args.n):
+            min_results.append(np.min(results[i:i+args.n], axis=0))
 
-    # max
-    max_results = []
-    for i in range(0, len(min_results), args.n):
-        max_results.append(np.max(min_results[i:i+args.n], axis=0))
+        # max
+        max_results = []
+        for i in range(0, len(min_results), args.n):
+            max_results.append(np.max(min_results[i:i+args.n], axis=0))
 
-    predicts = np.argmax(max_results, axis=0)
-    predicts.tofile(os.path.join(folder, 'predicts.csv'), sep=',')
+        predicts = np.argmax(max_results, axis=0)
+        predicts.tofile(os.path.join(folder, 'predicts_{}.csv'.format(iter)), sep=',')
 
-    acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
+        acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
 
-    logger.info('accuracy = {}'.format(acc))
+        logger.info('epoches:{}, accuracy:{}'.format(args.max_epoches * iter, acc))
 
 
 if __name__ == '__main__':

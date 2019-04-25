@@ -42,12 +42,12 @@ class FullyConnected(object):
         else:
             raise ValueError
 
-        self.graph = tf.Graph()
+        # self.graph = tf.Graph()
         config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
         config.gpu_options.allow_growth = True
-        self.sess = tf.Session(graph=self.graph, config=config)
+        self.sess = tf.Session(config=config)
 
-        with self.graph.as_default():
+        with tf.variable_scope(self.name):
             self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
             self.X = tf.placeholder(tf.float32, [None, self.feature_dim], 'obs')
             self.Y = tf.placeholder(tf.int32, [None], 'label')
@@ -108,9 +108,13 @@ class FullyConnected(object):
     def restore(self):
         if os.path.exists(self.ckpt):
             self.saver.restore(self.sess, self.ckpt)
+            print('model restored from {}'.format(self.ckpt))
+        else:
+            print('checkpoint does not exist')
 
     def save(self):
         self.saver.save(self.sess, self.ckpt)
+        print('model saved in {}'.format(self.ckpt))
 
 
 def main():

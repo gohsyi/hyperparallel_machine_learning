@@ -130,13 +130,13 @@ def main():
     test_de = data['test_de']
     test_label_eeg = data['test_label_eeg']
 
-    folder = os.path.join('logs', 'fully_connected')
+    folder = os.path.join('logs', 'convolutional')
     if not os.path.exists(folder):
         os.makedirs(folder)
 
     model = Conv1d(
         folder=folder,
-        name='fully_connected',
+        name='convolutional',
         hidsz='5,3',
         ac_fn='relu',
         lr=LEARNING_RATE,

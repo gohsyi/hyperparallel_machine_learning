@@ -2,6 +2,7 @@ import os
 import random
 import numpy as np
 import scipy.io as sio
+import tensorflow as tf
 from fully_connected import FullyConnected
 from utils import parse_arg, empty_list, getLogger
 from multiprocessing import Pool
@@ -58,6 +59,7 @@ def train(name):
     )
     model.restore()
     model.train(args.max_epoches)
+
     return model.classify()
 
 
@@ -89,6 +91,7 @@ def main():
 
     for iter in range(10):
         """ training """
+        tf.reset_default_graph()  # clear all nodes
         if args.serial:
             results = [train(model) for model in models]
         else:
@@ -118,7 +121,7 @@ def main():
                 i = i + 1
 
         predicts = np.max(predicts, axis=1)
-        predicts.tofile(os.path.join(folder, 'predicts_{}.csv'.format(iter)), sep=',')
+        np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), predicts, delimiter=',')
         predicts = np.argmax(predicts, axis=0)
 
         acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]

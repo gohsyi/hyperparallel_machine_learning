@@ -2,6 +2,7 @@ import os
 import random
 import numpy as np
 import scipy.io as sio
+import tensorflow as tf
 from fully_connected import FullyConnected
 from utils import parse_arg, empty_list, getLogger
 from multiprocessing import Pool
@@ -105,6 +106,7 @@ def main():
 
     for iter in range(10):
         """ training """
+        tf.reset_default_graph()
         if args.serial:
             results = [train(model) for model in models]
         else:
@@ -125,7 +127,7 @@ def main():
             max_results.append(np.max(min_results[i:i+args.n], axis=0))
 
         predicts = np.argmax(max_results, axis=0)
-        predicts.tofile(os.path.join(folder, 'predicts_{}.csv'.format(iter)), sep=',')
+        np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), predicts, delimiter=',')
 
         acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
 

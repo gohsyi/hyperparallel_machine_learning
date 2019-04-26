@@ -121,7 +121,7 @@ def main():
                 predicts[c0].append(1 - max_results[i])
                 i = i + 1
 
-        predicts = np.max(predicts, axis=1)
+        predicts = np.sum(predicts, axis=1)
         np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), predicts, delimiter=',')
         predicts = np.argmax(predicts, axis=0)
 

@@ -10,7 +10,7 @@ MAX_EPOCHES = int(1e6)
 
 class FullyConnected(object):
     def __init__(self, folder, name, hidsz, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
-                 test_data=None, test_label=None, seed=0, validate=False):
+                 test_data=None, test_label=None, sigmoid=False, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
 
@@ -30,6 +30,7 @@ class FullyConnected(object):
         self.n_classes = n_classes
         self.lr = lr
         self.lr_decay = lr_decay
+        self.sigmoid = sigmoid
 
         if ac_fn == 'tanh':
             self.ac_fn = tf.nn.tanh
@@ -64,10 +65,15 @@ class FullyConnected(object):
                 kernel_initializer=tf.random_normal_initializer
             )
 
-            self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
-                logits=self.logits,
-                labels=self.Y
-            ))
+            if self.sigmoid:
+                self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=self.logits,
+                    labels=tf.one_hot(self.Y, self.n_classes)))
+            else:
+                self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+                    logits=self.logits,
+                    labels=self.Y))
+
             self.soft = tf.nn.softmax(self.logits)
             self.opt = tf.train.GradientDescentOptimizer(self.LR).minimize(self.loss)
             self.saver = tf.train.Saver()
@@ -106,15 +112,15 @@ class FullyConnected(object):
         return logits
 
     def restore(self):
-        if os.path.exists(self.ckpt):
+        try:
             self.saver.restore(self.sess, self.ckpt)
-            print('model restored from {}'.format(self.ckpt))
-        else:
-            print('checkpoint does not exist')
+            self.logger.info('model restored from {}'.format(self.ckpt))
+        except:
+            self.logger.info('checkpoint does not exist')
 
     def save(self):
         self.saver.save(self.sess, self.ckpt)
-        print('model saved in {}'.format(self.ckpt))
+        self.logger.info('model saved in {}'.format(self.ckpt))
 
 
 def main():

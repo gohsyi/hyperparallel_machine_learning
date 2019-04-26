@@ -17,6 +17,7 @@ def parse_arg():
     parser.add_argument('-seed', type=int, default=0)
     parser.add_argument('-lr', type=float, default=1e-4)
     parser.add_argument('-lr_decay', type=bool, default=False)
+    parser.add_argument('-sigmoid', type=bool, default=False)
     parser.add_argument('-serial', action='store_true', default=False)
     parser.add_argument('-n_classes', type=int, default=4)
     parser.add_argument('-max_epoches', type=int, default=int(1e5))
@@ -29,13 +30,14 @@ def parse_arg():
 
     args = parser.parse_args()
 
-    abstract = 'n{}_h{}_{}_lr{}{}ep{}{}'.format(
+    abstract = 'n{}_h{}_{}_lr{}{}ep{}{}{}'.format(
         args.n,
         args.hidsz,
         args.ac_fn,
         args.lr,
         '_decay_' if args.lr_decay else '_',
         args.max_epoches,
+        '_sigmoid_' if args.sigmoid else '',
         '_debug' if args.serial else '',
     )
 

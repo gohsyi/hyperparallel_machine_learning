@@ -67,6 +67,7 @@ def train(name):
         ac_fn=args.ac_fn,
         lr=args.lr,
         lr_decay=args.lr_decay,
+        sigmoid=args.sigmoid,
         n_classes=2,
         train_data=train_d,
         train_label=train_l,

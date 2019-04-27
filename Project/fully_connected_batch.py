@@ -8,9 +8,9 @@ LEARNING_RATE = 1e-4
 MAX_EPOCHES = int(1e5)
 
 
-class FullyConnected(object):
+class FullyConnectedBatch(object):
     def __init__(self, folder, name, max_epoches, batchsize, hidsize, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
-                 test_data=None, test_label=None, sigmoid=False, seed=0, validate=False, eval_interval=100):
+                 test_data=None, test_label=None, use_sigmoid=False, seed=0, validate=False, eval_interval=100):
         np.random.seed(seed)
         tf.set_random_seed(seed)
 
@@ -24,7 +24,7 @@ class FullyConnected(object):
         self.train_data = np.array(train_data)
         self.train_label = np.squeeze(np.array(train_label, dtype=np.int32))
         self.test_data = np.array(test_data)
-        self.test_label = np.squeeze(np.array(test_label, dtype=np.int32))
+        self.test_label = np.squeeze(np.array(test_label, dtype=np.int32)) if test_label is not None else None
         self.max_epoches = max_epoches
         self.batchsize = batchsize
         self.hidsize = list(map(int, hidsize.split(',')))
@@ -32,7 +32,7 @@ class FullyConnected(object):
         self.n_classes = n_classes
         self.lr = lr
         self.lr_decay = lr_decay
-        self.sigmoid = sigmoid
+        self.use_sigmoid = use_sigmoid
         self.eval_interval = eval_interval
 
         if ac_fn == 'tanh':
@@ -70,10 +70,10 @@ class FullyConnected(object):
                 kernel_initializer=tf.random_normal_initializer
             )
 
-            if self.sigmoid:
+            if self.use_sigmoid:
                 self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=self.logits,
-                    labels=tf.one_hot(self.train_l, self.n_classes)))
+                    labels=tf.one_hot(self.train_l, self.n_classes, dtype=tf.float64)))
             else:
                 self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
                     logits=self.logits,
@@ -99,7 +99,7 @@ class FullyConnected(object):
                             self.logger.info('ep:{}\t loss:{}\t acc:{}'.format(ep, np.mean(avg_loss), self.val()))
                         else:
                             self.logger.info('ep:{}\tloss:{}'.format(ep, np.mean(avg_loss)))
-                        avg_loss = 0
+                        avg_loss = []
                     ep += 1
                 except tf.errors.OutOfRangeError:
                     break
@@ -118,7 +118,7 @@ class FullyConnected(object):
 
     def classify(self):
         with timed('classifying', self.logger):
-            if self.sigmoid:
+            if self.use_sigmoid:
                 logits = self.sess.run(self.sigmoid, feed_dict={self.train_d: self.test_data})[:, 1]  # p(y=1)
             else:
                 logits = self.sess.run(self.softmax, feed_dict={self.train_d: self.test_data})[:, 1]  # p(y=1)
@@ -148,7 +148,7 @@ def main():
     if not os.path.exists(folder):
         os.makedirs(folder)
     
-    model = FullyConnected(
+    model = FullyConnectedBatch(
         folder=folder,
         name='fully_connected',
         batchsize=1024,
@@ -157,6 +157,7 @@ def main():
         ac_fn='relu',
         lr=LEARNING_RATE,
         lr_decay=False,
+        use_sigmoid=False,
         n_classes=4,
         train_data=train_de,
         train_label=train_label_eeg,

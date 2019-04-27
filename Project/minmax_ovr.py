@@ -4,6 +4,7 @@ import numpy as np
 import scipy.io as sio
 import tensorflow as tf
 from fully_connected import FullyConnected
+from fully_connected_batch import FullyConnectedBatch
 from utils import parse_arg, empty_list, getLogger
 from multiprocessing import Pool
 
@@ -60,21 +61,38 @@ def train(name):
 
     test_d = sio.loadmat(os.path.join('data', 'data.mat'))[args.test_d]
 
-    model = FullyConnected(
-        folder=folder,
-        name=name,
-        hidsize=args.hidsize,
-        max_epoches=args.max_epoches,
-        ac_fn=args.ac_fn,
-        lr=args.lr,
-        lr_decay=args.lr_decay,
-        use_sigmoid=args.sigmoid,
-        n_classes=2,
-        train_data=train_d,
-        train_label=train_l,
-        test_data=test_d,
-        seed=args.seed
-    )
+    if args.batchsize == 0:
+        model = FullyConnected(
+            folder=folder,
+            name=name,
+            hidsize=args.hidsize,
+            max_epoches=args.max_epoches,
+            ac_fn=args.ac_fn,
+            lr=args.lr,
+            lr_decay=args.lr_decay,
+            use_sigmoid=args.sigmoid,
+            n_classes=2,
+            train_data=train_d,
+            train_label=train_l,
+            test_data=test_d,
+            seed=args.seed)
+    else:
+        model = FullyConnectedBatch(
+            folder=folder,
+            name=name,
+            batchsize=args.batchsize,
+            max_epoches=args.max_epoches,
+            hidsize=args.hidsize,
+            ac_fn=args.ac_fn,
+            lr=args.lr,
+            lr_decay=args.lr_decay,
+            use_sigmoid=args.sigmoid,
+            n_classes=2,
+            train_data=train_d,
+            train_label=train_l,
+            test_data=test_d,
+            seed=args.seed)
+
     model.restore()
     model.train()
 

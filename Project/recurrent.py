@@ -8,8 +8,8 @@ LEARNING_RATE = 1e-4
 MAX_EPOCHES = int(1e6)
 
 
-class CNN(object):
-    def __init__(self, folder, name, hidsz, kernelsz, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
+class RNN(object):
+    def __init__(self, folder, name, hidsize, dropout, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
                  test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
@@ -25,8 +25,8 @@ class CNN(object):
         self.train_label = np.squeeze(train_label)
         self.test_data = np.array(test_data)
         self.test_label = np.squeeze(test_label)
-        self.hidsz = list(map(int, hidsz.split(',')))
-        self.kernelsz = list(map(int, kernelsz.split(',')))
+        self.hidsize = list(map(int, hidsize.split(',')))
+        self.dropout = dropout
         self.feature_dim = self.train_data.shape[-1]
         self.n_classes = n_classes
         self.lr = lr
@@ -52,27 +52,21 @@ class CNN(object):
             self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
             self.X = tf.placeholder(tf.float32, [None, self.feature_dim], 'obs')
             self.Y = tf.placeholder(tf.int32, [None], 'label')
-            self.train_d = tf.reshape(self.X, [None, 5, self.feature_dim//5, 1])  # h, w, #channels
+            self.train_d = tf.reshape(self.X, [-1, 5, self.feature_dim//5])
 
-            self.hidden = [self.train_d]
-            for dim in self.hidsz:
-                self.hidden.append(tf.layers.conv2d(
-                    inputs=self.hidden[-1],
-                    filters=dim,
-                    strides=1,
-                    kernel_size=5,
-                    padding='same',
-                    activation=tf.nn.relu,
-                ))
-                self.hidden.append(tf.layers.max_pooling2d(
-                    inputs=self.hidden[-1],
-                    pool_size=5,
-                    padding='same',
-                    strides=2,
-                ))
+            lstm_cells = []
+            for dim in self.hidsize:
+                lstm_cell = tf.nn.rnn_cell.LSTMCell(dim, name='basic_lstm_cell')
+                lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_cell, input_keep_prob=dropout, output_keep_prob=dropout)
+                lstm_cells.append(lstm_cell)
+
+            cell = tf.contrib.rnn.MultiRNNCell(lstm_cells)
+            initial_state = cell.zero_state(tf.shape(self.train_d)[0], tf.float32)
+
+            outputs, final_state = tf.nn.dynamic_rnn(cell, self.train_d, initial_state=initial_state)
 
             self.logits = tf.layers.dense(
-                tf.layers.flatten(self.hidden[-1]), self.n_classes,
+                tf.layers.flatten(outputs), self.n_classes,
                 kernel_initializer=tf.random_normal_initializer
             )
             self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -136,11 +130,11 @@ def main():
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-    model = CNN(
+    model = RNN(
         folder=folder,
-        name='convolutional',
-        hidsz='16,8',
-        kernelsz = '5,3',
+        name='recurrent',
+        hidsize='128',
+        dropout=0.5,
         ac_fn='sigmoid',
         lr=LEARNING_RATE,
         lr_decay=False,

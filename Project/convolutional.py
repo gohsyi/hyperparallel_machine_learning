@@ -4,10 +4,7 @@ import numpy as np
 import tensorflow as tf
 from utils import getLogger, timed, parse_arg
 
-LEARNING_RATE = 1e-4
-MAX_EPOCHES = int(1e6)
-
-args, _ = parse_arg()
+args, abstract = parse_arg()
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
@@ -136,19 +133,19 @@ def main():
     test_de = data['test_de']
     test_label_eeg = data['test_label_eeg']
 
-    folder = os.path.join('logs', 'convolutional')
+    folder = os.path.join('logs', 'cnn_{}'.format(abstract))
     if not os.path.exists(folder):
         os.makedirs(folder)
 
     model = CNN(
         folder=folder,
         name='convolutional',
-        hidsz='16,8',
+        hidsz=args.hidsize,
         kernelsz = '5,3',
         poolsz = '5,3',
-        ac_fn='sigmoid',
-        lr=LEARNING_RATE,
-        lr_decay=False,
+        ac_fn=args.ac_fn,
+        lr=args.lr,
+        lr_decay=args.lr_decay,
         n_classes=4,
         train_data=train_de,
         train_label=train_label_eeg,
@@ -156,7 +153,7 @@ def main():
         test_label=test_label_eeg,
         validate=True
     )
-    model.train(MAX_EPOCHES)
+    model.train(args.max_epoches)
 
 
 if __name__ == '__main__':

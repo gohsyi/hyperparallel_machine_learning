@@ -1,6 +1,7 @@
 import os
 import matplotlib
 matplotlib.use('Agg')
+matplotlib.style.use("ggplot")
 import matplotlib.pyplot as plt
 
 

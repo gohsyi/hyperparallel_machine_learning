@@ -2,10 +2,14 @@ import os
 import scipy.io as sio
 import numpy as np
 import tensorflow as tf
-from utils import getLogger, timed
+from utils import getLogger, timed, parse_arg
 
 LEARNING_RATE = 1e-4
 MAX_EPOCHES = int(1e6)
+
+args = parse_arg()
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 
 class RNN(object):

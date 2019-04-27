@@ -9,7 +9,7 @@ MAX_EPOCHES = int(1e6)
 
 
 class CNN(object):
-    def __init__(self, folder, name, hidsz, kernelsz, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
+    def __init__(self, folder, name, hidsz, kernelsz, poolsz, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
                  test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
@@ -27,6 +27,7 @@ class CNN(object):
         self.test_label = np.squeeze(test_label)
         self.hidsz = list(map(int, hidsz.split(',')))
         self.kernelsz = list(map(int, kernelsz.split(',')))
+        self.poolsz = list(map(int, poolsz.split(',')))
         self.feature_dim = self.train_data.shape[-1]
         self.n_classes = n_classes
         self.lr = lr
@@ -52,23 +53,22 @@ class CNN(object):
             self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
             self.X = tf.placeholder(tf.float32, [None, self.feature_dim], 'obs')
             self.Y = tf.placeholder(tf.int32, [None], 'label')
-            self.train_d = tf.reshape(self.X, [None, 5, self.feature_dim//5, 1])  # h, w, #channels
+            self.train_d = tf.reshape(self.X, [-1, 5, self.feature_dim//5, 1])  # h, w, #channels
 
             self.hidden = [self.train_d]
-            for dim in self.hidsz:
+            for hdim, kdim, pdim in zip(self.hidsz, self.kernelsz, self.poolsz):
                 self.hidden.append(tf.layers.conv2d(
                     inputs=self.hidden[-1],
-                    filters=dim,
+                    filters=hdim,
                     strides=1,
-                    kernel_size=5,
+                    kernel_size=(kdim, kdim),
                     padding='same',
-                    activation=tf.nn.relu,
                 ))
                 self.hidden.append(tf.layers.max_pooling2d(
                     inputs=self.hidden[-1],
-                    pool_size=5,
+                    pool_size=pdim,
                     padding='same',
-                    strides=2,
+                    strides=1,
                 ))
 
             self.logits = tf.layers.dense(
@@ -141,6 +141,7 @@ def main():
         name='convolutional',
         hidsz='16,8',
         kernelsz = '5,3',
+        poolsz = '5,3',
         ac_fn='sigmoid',
         lr=LEARNING_RATE,
         lr_decay=False,

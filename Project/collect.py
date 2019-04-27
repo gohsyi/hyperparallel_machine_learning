@@ -1,8 +1,8 @@
 import os
 import matplotlib
 matplotlib.use('Agg')
-matplotlib.style.use("ggplot")
 import matplotlib.pyplot as plt
+plt.style.use("ggplot")
 
 
 for root, dirs, files in os.walk('logs'):

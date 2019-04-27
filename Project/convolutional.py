@@ -9,7 +9,7 @@ MAX_EPOCHES = int(1e6)
 
 
 class Conv1d(object):
-    def __init__(self, folder, name, hidsz, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
+    def __init__(self, folder, name, hidsz, kernelsz, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
                  test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
@@ -26,6 +26,7 @@ class Conv1d(object):
         self.test_data = np.array(test_data)
         self.test_label = np.squeeze(test_label)
         self.hidsz = list(map(int, hidsz.split(',')))
+        self.kernelsz = list(map(int, kernelsz.split(',')))
         self.feature_dim = self.train_data.shape[-1]
         self.n_classes = n_classes
         self.lr = lr
@@ -78,7 +79,7 @@ class Conv1d(object):
                 labels=self.Y
             ))
             self.soft = tf.nn.softmax(self.logits)
-            self.opt = tf.train.GradientDescentOptimizer(self.LR).minimize(self.loss)
+            self.opt = tf.train.AdamOptimizer(self.LR).minimize(self.loss)
             self.saver = tf.train.Saver()
             self.sess.run(tf.global_variables_initializer())
 
@@ -138,6 +139,7 @@ def main():
         folder=folder,
         name='convolutional',
         hidsz='16,8',
+        kernelsz = '5,3',
         ac_fn='sigmoid',
         lr=LEARNING_RATE,
         lr_decay=False,

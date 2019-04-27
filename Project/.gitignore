@@ -5,3 +5,5 @@ logs/
 *.pdf
 
 data/*.csv
+
+report/

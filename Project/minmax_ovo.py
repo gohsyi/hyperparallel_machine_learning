@@ -124,7 +124,7 @@ def main():
 
         predicts = np.sum(predicts, axis=1)
         predicts = np.argmax(predicts, axis=0)
-        np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), int(predicts), delimiter=',')
+        np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), predicts, delimiter=',')
 
         acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
 

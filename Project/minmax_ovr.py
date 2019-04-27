@@ -63,11 +63,12 @@ def train(name):
     model = FullyConnected(
         folder=folder,
         name=name,
-        hidsz=args.hidsz,
+        hidsize=args.hidsize,
+        max_epoches=args.max_epoches,
         ac_fn=args.ac_fn,
         lr=args.lr,
         lr_decay=args.lr_decay,
-        sigmoid=args.sigmoid,
+        use_sigmoid=args.sigmoid,
         n_classes=2,
         train_data=train_d,
         train_label=train_l,
@@ -75,9 +76,9 @@ def train(name):
         seed=args.seed
     )
     model.restore()
-    model.train(args.max_epoches)
+    model.train()
 
-    return model.classify()
+    return model.predict()
 
 
 args, abstract = parse_arg()
@@ -128,11 +129,11 @@ def main():
             max_results.append(np.max(min_results[i:i+args.n], axis=0))
 
         predicts = np.argmax(max_results, axis=0)
-        np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), predicts, delimiter=',')
+        np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), int(predicts), delimiter=',')
 
         acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
 
-        logger.info('epoches:{}, accuracy:{}'.format(args.max_epoches * iter, acc))
+        logger.info('ep:{}, acc:{}'.format(args.max_epoches * (iter+1), acc))
 
 
 if __name__ == '__main__':

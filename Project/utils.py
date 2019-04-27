@@ -12,11 +12,12 @@ argument parser
 def parse_arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', type=int, default=3)
-    parser.add_argument('-hidsz', type=str, default='128')
+    parser.add_argument('-hidsize', type=str, default='128')
     parser.add_argument('-ac_fn', type=str, default='relu', help='relu/elu/sigmoid/tanh')
     parser.add_argument('-seed', type=int, default=0)
     parser.add_argument('-lr', type=float, default=1e-4)
-    parser.add_argument('-lr_decay', type=bool, default=False)
+    parser.add_argument('-lr_decay', action='store_true', default=False)
+    parser.add_argument('-batchsize', type=int, default=0)
     parser.add_argument('-sigmoid', action='store_true', default=False)
     parser.add_argument('-serial', action='store_true', default=False)
     parser.add_argument('-n_classes', type=int, default=4)
@@ -30,12 +31,13 @@ def parse_arg():
 
     args = parser.parse_args()
 
-    abstract = 'n{}_h{}_{}_lr{}{}{}_ep{}{}'.format(
+    abstract = 'n{}_h{}_{}_lr{}{}_bs{}{}_ep{}{}'.format(
         args.n,
-        args.hidsz,
+        args.hidsize,
         args.ac_fn,
         args.lr,
         '_decay' if args.lr_decay else '',
+        args.batchsize,
         '_sigmoid' if args.sigmoid else '',
         args.max_epoches,
         '_debug' if args.serial else '',

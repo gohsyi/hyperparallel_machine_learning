@@ -58,13 +58,13 @@ class Conv1d(object):
                     inputs=self.hidden[-1],
                     filters=dim,
                     strides=1,
-                    kernel_size=2,
+                    kernel_size=5,
                     padding='same',
                     activation=tf.nn.relu,
                 ))
                 self.hidden.append(tf.layers.max_pooling1d(
                     inputs=self.hidden[-1],
-                    pool_size=2,
+                    pool_size=5,
                     padding='same',
                     strides=2,
                 ))
@@ -137,8 +137,8 @@ def main():
     model = Conv1d(
         folder=folder,
         name='convolutional',
-        hidsz='5,3',
-        ac_fn='relu',
+        hidsz='16,8',
+        ac_fn='sigmoid',
         lr=LEARNING_RATE,
         lr_decay=False,
         n_classes=4,

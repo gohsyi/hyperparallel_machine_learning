@@ -7,7 +7,7 @@ from utils import getLogger, timed, parse_arg
 LEARNING_RATE = 1e-4
 MAX_EPOCHES = int(1e6)
 
-args = parse_arg()
+args, _ = parse_arg()
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 

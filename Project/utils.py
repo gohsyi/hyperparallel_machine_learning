@@ -17,7 +17,7 @@ def parse_arg():
     parser.add_argument('-seed', type=int, default=0)
     parser.add_argument('-lr', type=float, default=1e-4)
     parser.add_argument('-lr_decay', action='store_true', default=False)
-    parser.add_argument('-batchsize', type=int, default=0)
+    parser.add_argument('-batchsize', type=int, default=64)
     parser.add_argument('-sigmoid', action='store_true', default=False)
     parser.add_argument('-serial', action='store_true', default=False)
     parser.add_argument('-n_classes', type=int, default=4)

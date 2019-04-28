@@ -57,7 +57,7 @@ class CNN(object):
             self.train_data = np.reshape(self.train_data, [-1, 5, self.feature_dim//5, 1])
             self.test_data = np.reshape(self.test_data, [-1, 5, self.feature_dim//5, 1])
             self.batch = tf.data.Dataset.from_tensor_slices((self.train_data, self.train_label))
-            self.batch = self.batch.shuffle(self.train_data.shape[0]).batch(self.batchsz).repeat(self.max_epoches)
+            self.batch = self.batch.shuffle(self.train_data.shape[0]).batch(self.batchsz).repeat()
             self.train_d, self.train_l = self.batch.make_one_shot_iterator().get_next()
 
             self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
@@ -69,7 +69,7 @@ class CNN(object):
                     filters=hdim,
                     strides=1,
                     kernel_size=(kdim, kdim),
-                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.05),
+                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
                     padding='same',
                 ))
                 self.hidden.append(tf.layers.max_pooling2d(

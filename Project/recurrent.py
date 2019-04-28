@@ -10,7 +10,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 
 class RNN(object):
-    def __init__(self, folder, name, hidsize, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
+    def __init__(self, folder, name, hidsize, batchsize, ac_fn, max_epoches, lr, lr_decay, n_classes, train_data, train_label,
                  test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
@@ -22,13 +22,15 @@ class RNN(object):
         self.ckpt = os.path.join(self.folder, '{}.ckpt'.format(self.name))
         self.logger = getLogger(folder, name)
         self.validate = validate
-        self.train_data = np.array(train_data)
-        self.train_label = np.squeeze(train_label)
-        self.test_data = np.array(test_data)
-        self.test_label = np.squeeze(test_label)
+        self.train_data = np.array(train_data, np.float32)
+        self.train_label = np.squeeze(np.array(train_label, np.int32))
+        self.test_data = np.array(test_data, np.float32) if test_data is not None else None
+        self.test_label = np.squeeze(np.array(test_label, np.int32)) if test_label is not None else None
+        self.batchsize = batchsize
         self.hidsize = list(map(int, hidsize.split(',')))
         self.feature_dim = self.train_data.shape[-1]
         self.n_classes = n_classes
+        self.max_epoches = max_epoches
         self.lr = lr
         self.lr_decay = lr_decay
 
@@ -49,10 +51,11 @@ class RNN(object):
         self.sess = tf.Session(graph=self.graph, config=config)
 
         with self.graph.as_default():
-            self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
-            self.X = tf.placeholder(tf.float32, [None, self.feature_dim], 'obs')
-            self.Y = tf.placeholder(tf.int32, [None], 'label')
-            self.train_d = tf.reshape(self.X, [-1, 5, self.feature_dim//5])
+            self.train_data = np.reshape(self.train_data, [-1, 5, self.feature_dim // 5])
+            self.test_data = np.reshape(self.test_data, [-1, 5, self.feature_dim // 5])
+            self.batch = tf.data.Dataset.from_tensor_slices((self.train_data, self.train_label))
+            self.batch = self.batch.shuffle(self.train_data.shape[0]).batch(self.batchsize).repeat()
+            self.train_d, self.train_l = self.batch.make_one_shot_iterator().get_next()
 
             # lstm_cells = [tf.nn.rnn_cell.LSTMCell(dim) for dim in self.hidsize]
             # cell = tf.nn.rnn_cell.MultiRNNCell(lstm_cells)
@@ -64,28 +67,31 @@ class RNN(object):
             lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidsize[0], activation=self.ac_fn)
             outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, inputs, dtype=tf.float32)
 
+            self.hidden = [tf.concat(outputs, axis=-1)]
+
+            for hdim in self.hidsize[1:]:
+                self.hidden.append(tf.layers.dense(
+                    self.hidden[-1], hdim,
+                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.1)
+                ))
+
             self.logits = tf.layers.dense(
-                tf.concat(outputs, axis=-1), self.n_classes,
-                kernel_initializer=tf.random_normal_initializer
+                self.hidden[-1], self.n_classes,
+                kernel_initializer=tf.truncated_normal_initializer(stddev=0.1)
             )
-            self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+            self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=self.logits,
-                labels=self.Y
+                labels=tf.stop_gradient(tf.one_hot(self.train_l, self.n_classes))
             ))
-            self.soft = tf.nn.softmax(self.logits)
-            self.opt = tf.train.AdamOptimizer(self.LR).minimize(self.loss)
+            self.sigmoid = tf.nn.sigmoid(self.logits)
+            self.opt = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
             self.saver = tf.train.Saver()
             self.sess.run(tf.global_variables_initializer())
 
-    def train(self, epoches):
-        with timed('training %i epoches' % epoches, self.logger):
-            for ep in range(epoches):
-                lr = self.lr * (1 - ep / epoches) if self.lr_decay else self.lr
-                loss, _ = self.sess.run([self.loss, self.opt], feed_dict={
-                    self.X: self.train_data,
-                    self.Y: self.train_label,
-                    self.LR: lr
-                })
+    def train(self):
+        with timed('training %i epoches' % self.max_epoches, self.logger):
+            for ep in range(self.max_epoches):
+                loss, _ = self.sess.run([self.loss, self.opt])
                 if ep % 10 == 0:
                     if self.validate:
                         self.logger.info('ep:%i\t loss:%f\t acc:%f' % (ep, loss, self.val()))
@@ -95,18 +101,18 @@ class RNN(object):
 
     def test(self):
         with timed('testing', self.logger):
-            logits = self.sess.run(self.logits, feed_dict={self.X: self.test_data})
+            logits = self.sess.run(self.logits, feed_dict={self.train_d: self.test_data})
         labels = np.argmax(logits, axis=-1)
         return labels
 
     def val(self):
-        logits = self.sess.run(self.logits, feed_dict={self.X: self.test_data})
+        logits = self.sess.run(self.logits, feed_dict={self.train_d: self.test_data})
         labels = np.argmax(logits, axis=-1)
         return np.count_nonzero(labels == self.test_label) / self.test_label.size
 
     def classify(self):
         with timed('test', self.logger):
-            logits = self.sess.run(self.soft, feed_dict={self.X: self.test_data})[:, 1]  # p(y=1)
+            logits = self.sess.run(self.sigmoid, feed_dict={self.train_d: self.test_data})[:, 1]  # p(y=1)
         return logits
 
     def restore(self):
@@ -133,7 +139,9 @@ def main():
         folder=folder,
         name='recurrent',
         hidsize=args.hidsize,
+        batchsize=args.batchsize,
         ac_fn=args.ac_fn,
+        max_epoches=args.max_epoches,
         lr=args.lr,
         lr_decay=args.lr_decay,
         n_classes=4,
@@ -143,7 +151,7 @@ def main():
         test_label=test_label_eeg,
         validate=True
     )
-    model.train(args.max_epoches)
+    model.train()
 
 
 if __name__ == '__main__':

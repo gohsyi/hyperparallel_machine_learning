@@ -72,7 +72,7 @@ class FullyConnectedBatch(object):
             if self.use_sigmoid:
                 self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=self.logits,
-                    labels=tf.one_hot(self.train_l, self.n_classes, dtype=tf.float32)))
+                    labels=tf.stop_gradient(tf.one_hot(self.train_l, self.n_classes, dtype=tf.float32))))
             else:
                 self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
                     logits=self.logits,
@@ -153,7 +153,7 @@ def main():
         ac_fn='relu',
         lr=LEARNING_RATE,
         lr_decay=False,
-        use_sigmoid=False,
+        use_sigmoid=True,
         n_classes=4,
         train_data=train_de,
         train_label=train_label_eeg,

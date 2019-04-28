@@ -31,8 +31,6 @@ for root, dirs, files in os.walk('logs'):
                         acc.append(float(x[1]))
 
             if len(loss) > 0:
-                for i in range(1, len(loss)):
-                    loss[i] = loss[i-1] * args.smooth + loss[i] * (1-args.smooth)
                 plt.plot(loss)
                 plt.title('loss')
                 plt.savefig('.'.join(p.split('.')[:-1]) + '_loss.jpg')

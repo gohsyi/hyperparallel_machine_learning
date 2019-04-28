@@ -3,6 +3,12 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.style.use("ggplot")
+import argparse
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-smooth', type=float, default=0)
+args = parser.parse_args()
 
 
 for root, dirs, files in os.walk('logs'):
@@ -25,12 +31,16 @@ for root, dirs, files in os.walk('logs'):
                         acc.append(float(x[1]))
 
             if len(loss) > 0:
+                for i in range(1, len(loss)):
+                    loss[i] = loss[i-1] * args.smooth + loss[i] * (1-args.smooth)
                 plt.plot(loss)
                 plt.title('loss')
                 plt.savefig('.'.join(p.split('.')[:-1]) + '_loss.jpg')
                 plt.cla()
 
             if len(acc) > 0:
+                for i in range(1, len(acc)):
+                    acc[i] = acc[i-1] * args.smooth + acc[i] * (1-args.smooth)
                 plt.plot(acc)
                 plt.title('acc')
                 plt.savefig('.'.join(p.split('.')[:-1]) + '_acc.jpg')

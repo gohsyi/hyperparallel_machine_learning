@@ -54,14 +54,18 @@ class RNN(object):
             self.Y = tf.placeholder(tf.int32, [None], 'label')
             self.train_d = tf.reshape(self.X, [-1, 5, self.feature_dim//5])
 
-            lstm_cells = [tf.nn.rnn_cell.LSTMCell(dim) for dim in self.hidsize]
-            cell = tf.nn.rnn_cell.MultiRNNCell(lstm_cells)
-            initial_state = cell.zero_state(tf.shape(self.train_d)[0], tf.float32)
+            # lstm_cells = [tf.nn.rnn_cell.LSTMCell(dim) for dim in self.hidsize]
+            # cell = tf.nn.rnn_cell.MultiRNNCell(lstm_cells)
+            # initial_state = cell.zero_state(tf.shape(self.train_d)[0], tf.float32)
+            # outputs, final_state = tf.nn.dynamic_rnn(cell, self.train_d, initial_state=initial_state)
 
-            outputs, final_state = tf.nn.dynamic_rnn(cell, self.train_d, initial_state=initial_state)
+            inputs = tf.unstack(self.train_d, axis=1)
+            lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidsize[0], name="lstm_fw_cell")
+            lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidsize[0], name="lstm_bw_cell")
+            outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, inputs, dtype=tf.float32)
 
             self.logits = tf.layers.dense(
-                tf.layers.flatten(outputs), self.n_classes,
+                tf.concat(outputs, axis=-1), self.n_classes,
                 kernel_initializer=tf.random_normal_initializer
             )
             self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(

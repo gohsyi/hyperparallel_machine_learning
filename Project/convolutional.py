@@ -23,9 +23,9 @@ class CNN(object):
         self.ckpt = os.path.join(self.folder, '{}.ckpt'.format(self.name))
         self.logger = getLogger(folder, name)
         self.validate = validate
-        self.train_data = np.array(train_data)
+        self.train_data = np.array(train_data, np.float32)
         self.train_label = np.squeeze(np.array(train_label, np.int32))
-        self.test_data = np.array(test_data)
+        self.test_data = np.array(test_data, np.float32) if test_data is not None else None
         self.test_label = np.squeeze(np.array(test_label, np.int32)) if test_label is not None else None
         self.hidsz = list(map(int, hidsz.split(',')))
         self.batchsz = batchsz
@@ -55,8 +55,9 @@ class CNN(object):
 
         with self.graph.as_default():
             self.train_data = np.reshape(self.train_data, [-1, 5, self.feature_dim//5, 1])
+            self.test_data = np.reshape(self.test_data, [-1, 5, self.feature_dim//5, 1])
             self.batch = tf.data.Dataset.from_tensor_slices((self.train_data, self.train_label))
-            self.batch = self.batch.shuffle(self.batchsz).batch(self.batchsz).repeat(self.max_epoches)
+            self.batch = self.batch.shuffle(self.train_data.shape[0]).batch(self.batchsz).repeat(self.max_epoches)
             self.train_d, self.train_l = self.batch.make_one_shot_iterator().get_next()
 
             self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
@@ -68,24 +69,27 @@ class CNN(object):
                     filters=hdim,
                     strides=1,
                     kernel_size=(kdim, kdim),
+                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.05),
                     padding='same',
                 ))
                 self.hidden.append(tf.layers.max_pooling2d(
                     inputs=self.hidden[-1],
                     pool_size=pdim,
                     padding='same',
-                    strides=1,
+                    strides=2,
                 ))
 
             self.logits = tf.layers.dense(
                 tf.layers.flatten(self.hidden[-1]), self.n_classes,
                 kernel_initializer=tf.random_normal_initializer
             )
-            self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+            self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=self.logits,
-                labels=self.train_l
+                labels=tf.stop_gradient(tf.one_hot(self.train_l, self.n_classes))
             ))
-            self.soft = tf.nn.softmax(self.logits)
+            self.softmax = tf.nn.softmax(self.logits)
+            self.sigmoid = tf.nn.sigmoid(self.logits)
+
             self.opt = tf.train.AdamOptimizer(self.LR).minimize(self.loss)
             self.saver = tf.train.Saver()
             self.sess.run(tf.global_variables_initializer())
@@ -115,7 +119,7 @@ class CNN(object):
 
     def classify(self):
         with timed('test', self.logger):
-            logits = self.sess.run(self.soft, feed_dict={self.train_d: self.test_data})[:, 1]  # p(y=1)
+            logits = self.sess.run(self.sigmoid, feed_dict={self.train_d: self.test_data})[:, 1]  # p(y=1)
         return logits
 
     def restore(self):

@@ -102,7 +102,7 @@ def main():
         _, train_loss = sess.run([train_step, loss],
                                  feed_dict={xs: x_train[rnd_ind], ys: y_train[rnd_ind], keep_prob: 0.5})
 
-        if it % 500 == 0:
+        if it % 10 == 0:
             print("Iter: %d. Loss: %f" % (it, train_loss))
 
             pre_raw = sess.run(sigmoid_output, feed_dict={xs: x_test, keep_prob: 1})

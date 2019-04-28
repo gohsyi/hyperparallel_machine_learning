@@ -10,7 +10,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 
 class CNN(object):
-    def __init__(self, folder, name, hidsz, kernelsz, poolsz, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
+    def __init__(self, folder, name, max_epoches, hidsz, batchsz, kernelsz, poolsz,
+                 ac_fn, lr, lr_decay, n_classes, train_data, train_label,
                  test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
@@ -23,14 +24,16 @@ class CNN(object):
         self.logger = getLogger(folder, name)
         self.validate = validate
         self.train_data = np.array(train_data)
-        self.train_label = np.squeeze(train_label)
+        self.train_label = np.squeeze(np.array(train_label, np.int32))
         self.test_data = np.array(test_data)
-        self.test_label = np.squeeze(test_label)
+        self.test_label = np.squeeze(np.array(test_label, np.int32)) if test_label is not None else None
         self.hidsz = list(map(int, hidsz.split(',')))
+        self.batchsz = batchsz
         self.kernelsz = list(map(int, kernelsz.split(',')))
         self.poolsz = list(map(int, poolsz.split(',')))
         self.feature_dim = self.train_data.shape[-1]
         self.n_classes = n_classes
+        self.max_epoches = max_epoches
         self.lr = lr
         self.lr_decay = lr_decay
 
@@ -51,10 +54,12 @@ class CNN(object):
         self.sess = tf.Session(graph=self.graph, config=config)
 
         with self.graph.as_default():
+            self.train_data = np.reshape(self.train_data, [-1, 5, self.feature_dim//5, 1])
+            self.batch = tf.data.Dataset.from_tensor_slices((self.train_data, self.train_label))
+            self.batch = self.batch.shuffle(self.batchsz).batch(self.batchsz).repeat(self.max_epoches)
+            self.train_d, self.train_l = self.batch.make_one_shot_iterator().get_next()
+
             self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
-            self.X = tf.placeholder(tf.float32, [None, self.feature_dim], 'obs')
-            self.Y = tf.placeholder(tf.int32, [None], 'label')
-            self.train_d = tf.reshape(self.X, [-1, 5, self.feature_dim//5, 1])  # h, w, #channels
 
             self.hidden = [self.train_d]
             for hdim, kdim, pdim in zip(self.hidsz, self.kernelsz, self.poolsz):
@@ -78,22 +83,18 @@ class CNN(object):
             )
             self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=self.logits,
-                labels=self.Y
+                labels=self.train_l
             ))
             self.soft = tf.nn.softmax(self.logits)
             self.opt = tf.train.AdamOptimizer(self.LR).minimize(self.loss)
             self.saver = tf.train.Saver()
             self.sess.run(tf.global_variables_initializer())
 
-    def train(self, epoches):
-        with timed('training %i epoches' % epoches, self.logger):
-            for ep in range(epoches):
-                lr = self.lr * (1 - ep / epoches) if self.lr_decay else self.lr
-                loss, _ = self.sess.run([self.loss, self.opt], feed_dict={
-                    self.X: self.train_data,
-                    self.Y: self.train_label,
-                    self.LR: lr
-                })
+    def train(self):
+        with timed('training %i epoches' % self.max_epoches, self.logger):
+            for ep in range(self.max_epoches):
+                lr = self.lr * (1 - ep / self.max_epoches) if self.lr_decay else self.lr
+                loss, _ = self.sess.run([self.loss, self.opt], feed_dict={self.LR: lr})
                 if ep % 10 == 0:
                     if self.validate:
                         self.logger.info('ep:%i\t loss:%f\t acc:%f' % (ep, loss, self.val()))
@@ -103,18 +104,18 @@ class CNN(object):
 
     def test(self):
         with timed('testing', self.logger):
-            logits = self.sess.run(self.logits, feed_dict={self.X: self.test_data})
+            logits = self.sess.run(self.logits, feed_dict={self.train_d: self.test_data})
         labels = np.argmax(logits, axis=-1)
         return labels
 
     def val(self):
-        logits = self.sess.run(self.logits, feed_dict={self.X: self.test_data})
+        logits = self.sess.run(self.logits, feed_dict={self.train_d: self.test_data})
         labels = np.argmax(logits, axis=-1)
         return np.count_nonzero(labels == self.test_label) / self.test_label.size
 
     def classify(self):
         with timed('test', self.logger):
-            logits = self.sess.run(self.soft, feed_dict={self.X: self.test_data})[:, 1]  # p(y=1)
+            logits = self.sess.run(self.soft, feed_dict={self.train_d: self.test_data})[:, 1]  # p(y=1)
         return logits
 
     def restore(self):
@@ -140,9 +141,11 @@ def main():
     model = CNN(
         folder=folder,
         name='convolutional',
+        max_epoches=args.max_epoches,
         hidsz=args.hidsize,
-        kernelsz = '5,3',
-        poolsz = '5,3',
+        batchsz=args.batchsize,
+        kernelsz = '5,5',
+        poolsz = '2,2',
         ac_fn=args.ac_fn,
         lr=args.lr,
         lr_decay=args.lr_decay,
@@ -153,7 +156,7 @@ def main():
         test_label=test_label_eeg,
         validate=True
     )
-    model.train(args.max_epoches)
+    model.train()
 
 
 if __name__ == '__main__':

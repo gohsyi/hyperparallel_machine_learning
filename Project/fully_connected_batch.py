@@ -55,7 +55,7 @@ class FullyConnectedBatch(object):
             self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
 
             self.batch = tf.data.Dataset.from_tensor_slices((self.train_data, self.train_label))
-            self.batch = self.batch.shuffle(self.train_label.shape[0]).batch(self.batchsize).repeat(self.max_epoches)
+            self.batch = self.batch.shuffle(self.batchsize*10).batch(self.batchsize).repeat(self.max_epoches)
             self.train_d, self.train_l = self.batch.make_one_shot_iterator().get_next()
 
             self.hidden = [self.train_d]

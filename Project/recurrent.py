@@ -27,7 +27,6 @@ class RNN(object):
         self.test_data = np.array(test_data)
         self.test_label = np.squeeze(test_label)
         self.hidsize = list(map(int, hidsize.split(',')))
-        self.dropout = dropout
         self.feature_dim = self.train_data.shape[-1]
         self.n_classes = n_classes
         self.lr = lr

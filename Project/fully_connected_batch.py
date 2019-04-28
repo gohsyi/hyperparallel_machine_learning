@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from utils import getLogger, timed
 
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-5
 MAX_EPOCHES = int(1e5)
 
 

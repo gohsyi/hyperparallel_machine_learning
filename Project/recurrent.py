@@ -60,8 +60,8 @@ class RNN(object):
             # outputs, final_state = tf.nn.dynamic_rnn(cell, self.train_d, initial_state=initial_state)
 
             inputs = tf.unstack(self.train_d, axis=1)
-            lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidsize[0], name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidsize[0], name="lstm_bw_cell")
+            lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidsize[0], activation=self.ac_fn)
+            lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidsize[0], activation=self.ac_fn)
             outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, inputs, dtype=tf.float32)
 
             self.logits = tf.layers.dense(

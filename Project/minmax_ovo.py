@@ -1,4 +1,5 @@
 import os
+import gc
 import random
 import numpy as np
 import scipy.io as sio
@@ -80,7 +81,10 @@ def train(name):
     model.restore()
     model.train()
 
-    return model.predict()
+    predict = model.predict()
+    model.sess.close()  # prevent memory leak
+
+    return predict
 
 
 args, abstract = parse_arg()
@@ -112,6 +116,8 @@ def main():
     for iter in range(10):
         """ training """
         tf.reset_default_graph()  # clear all nodes
+        gc.collect()
+
         if args.serial:
             results = [train(model) for model in models]
         else:

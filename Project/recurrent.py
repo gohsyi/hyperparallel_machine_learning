@@ -10,7 +10,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 
 class RNN(object):
-    def __init__(self, folder, name, hidsize, dropout, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
+    def __init__(self, folder, name, hidsize, ac_fn, lr, lr_decay, n_classes, train_data, train_label,
                  test_data=None, test_label=None, seed=0, validate=False):
         np.random.seed(seed)
         tf.set_random_seed(seed)
@@ -55,13 +55,8 @@ class RNN(object):
             self.Y = tf.placeholder(tf.int32, [None], 'label')
             self.train_d = tf.reshape(self.X, [-1, 5, self.feature_dim//5])
 
-            lstm_cells = []
-            for dim in self.hidsize:
-                lstm_cell = tf.nn.rnn_cell.LSTMCell(dim, name='basic_lstm_cell')
-                lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_cell, input_keep_prob=dropout, output_keep_prob=dropout)
-                lstm_cells.append(lstm_cell)
-
-            cell = tf.contrib.rnn.MultiRNNCell(lstm_cells)
+            lstm_cells = [tf.nn.rnn_cell.LSTMCell(dim) for dim in self.hidsize]
+            cell = tf.nn.rnn_cell.MultiRNNCell(lstm_cells)
             initial_state = cell.zero_state(tf.shape(self.train_d)[0], tf.float32)
 
             outputs, final_state = tf.nn.dynamic_rnn(cell, self.train_d, initial_state=initial_state)
@@ -135,7 +130,6 @@ def main():
         folder=folder,
         name='recurrent',
         hidsize=args.hidsize,
-        dropout=0.2,
         ac_fn=args.ac_fn,
         lr=args.lr,
         lr_decay=args.lr_decay,

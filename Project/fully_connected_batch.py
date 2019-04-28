@@ -150,7 +150,7 @@ def main():
         batchsize=64,
         hidsize='128',
         max_epoches=MAX_EPOCHES,
-        ac_fn='relu',
+        ac_fn='sigmoid',
         lr=LEARNING_RATE,
         lr_decay=False,
         use_sigmoid=True,

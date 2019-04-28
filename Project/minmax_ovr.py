@@ -1,4 +1,5 @@
 import os
+import shutil
 import gc
 import random
 import numpy as np
@@ -115,8 +116,9 @@ def main():
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    os.makedirs(folder)
 
     for c in range(args.n_classes):
         decomposition(c)

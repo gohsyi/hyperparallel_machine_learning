@@ -13,7 +13,7 @@ def parse_arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', type=int, default=3)
     parser.add_argument('-hidsize', type=str, default='128')
-    parser.add_argument('-ac_fn', type=str, default='relu', help='relu/elu/sigmoid/tanh')
+    parser.add_argument('-ac_fn', type=str, default='sigmoid', help='relu/elu/sigmoid/tanh')
     parser.add_argument('-seed', type=int, default=0)
     parser.add_argument('-lr', type=float, default=1e-4)
     parser.add_argument('-lr_decay', action='store_true', default=False)

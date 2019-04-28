@@ -21,10 +21,10 @@ class FullyConnectedBatch(object):
         self.ckpt = os.path.join(self.folder, '{}.ckpt'.format(self.name))
         self.logger = getLogger(folder, name)
         self.validate = validate
-        self.train_data = np.array(train_data)
-        self.train_label = np.squeeze(np.array(train_label, dtype=np.int32))
-        self.test_data = np.array(test_data)
-        self.test_label = np.squeeze(np.array(test_label, dtype=np.int32)) if test_label is not None else None
+        self.train_data = np.array(train_data, np.float32)
+        self.train_label = np.squeeze(np.array(train_label, np.int32))
+        self.test_data = np.array(test_data, np.float32) if test_data is not None else None
+        self.test_label = np.squeeze(np.array(test_label, np.int32)) if test_label is not None else None
         self.max_epoches = max_epoches
         self.batchsize = batchsize
         self.hidsize = list(map(int, hidsize.split(',')))
@@ -53,9 +53,8 @@ class FullyConnectedBatch(object):
 
         with tf.variable_scope(self.name):
             self.LR = tf.placeholder(tf.float32, [], 'learning_rate')
-
             self.batch = tf.data.Dataset.from_tensor_slices((self.train_data, self.train_label))
-            self.batch = self.batch.shuffle(self.batchsize*10).batch(self.batchsize).repeat(self.max_epoches)
+            self.batch = self.batch.shuffle(self.train_data.shape[0]).batch(self.batchsize).repeat()
             self.train_d, self.train_l = self.batch.make_one_shot_iterator().get_next()
 
             self.hidden = [self.train_d]
@@ -63,17 +62,17 @@ class FullyConnectedBatch(object):
                 self.hidden.append(tf.layers.dense(
                     self.hidden[-1], dim,
                     activation=self.ac_fn,
-                    kernel_initializer=tf.random_normal_initializer
+                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.1)
                 ))
             self.logits = tf.layers.dense(
                 self.hidden[-1], self.n_classes,
-                kernel_initializer=tf.random_normal_initializer
+                kernel_initializer=tf.truncated_normal_initializer(stddev=0.1)
             )
 
             if self.use_sigmoid:
                 self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=self.logits,
-                    labels=tf.one_hot(self.train_l, self.n_classes, dtype=tf.float64)))
+                    labels=tf.one_hot(self.train_l, self.n_classes, dtype=tf.float32)))
             else:
                 self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
                     logits=self.logits,
@@ -89,20 +88,17 @@ class FullyConnectedBatch(object):
         ep = 0
         avg_loss = []
         with timed('training %i epoches' % self.max_epoches, self.logger):
-            while True:
-                try:
-                    lr = self.lr * (1 - ep/self.max_epoches) if self.lr_decay else self.lr
-                    loss, _ = self.sess.run([self.loss, self.opt], feed_dict={self.LR: lr})
-                    avg_loss.append(loss)
-                    if ep % self.eval_interval == 0:
-                        if self.validate:
-                            self.logger.info('ep:{}\t loss:{}\t acc:{}'.format(ep, np.mean(avg_loss), self.val()))
-                        else:
-                            self.logger.info('ep:{}\tloss:{}'.format(ep, np.mean(avg_loss)))
-                        avg_loss = []
-                    ep += 1
-                except tf.errors.OutOfRangeError:
-                    break
+            for ep in range(self.max_epoches):
+                lr = self.lr * (1 - ep/self.max_epoches) if self.lr_decay else self.lr
+                loss, _ = self.sess.run([self.loss, self.opt], feed_dict={self.LR: lr})
+                avg_loss.append(loss)
+
+                if ep % self.eval_interval == 0:
+                    if self.validate:
+                        self.logger.info('ep:{}\t loss:{}\t acc:{}'.format(ep, np.mean(avg_loss), self.val()))
+                    else:
+                        self.logger.info('ep:{}\tloss:{}'.format(ep, np.mean(avg_loss)))
+                    avg_loss = []
         self.save()
 
     def predict(self):
@@ -151,7 +147,7 @@ def main():
     model = FullyConnectedBatch(
         folder=folder,
         name='fully_connected',
-        batchsize=1024,
+        batchsize=64,
         hidsize='128',
         max_epoches=MAX_EPOCHES,
         ac_fn='relu',

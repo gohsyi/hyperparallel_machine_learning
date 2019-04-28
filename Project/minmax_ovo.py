@@ -146,7 +146,7 @@ def main():
                 predicts[c0].append(1 - max_results[i])
                 i = i + 1
 
-        predicts = np.min(predicts, axis=1)  # according to the paper, this should be `min'
+        predicts = np.sum(predicts, axis=1)  # according to the paper, this should be `min'
         predicts = np.argmax(predicts, axis=0)
         np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), predicts, delimiter=',')
 

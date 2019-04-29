@@ -18,8 +18,8 @@ y_true = sio.loadmat(os.path.join('data', 'data.mat'))['test_label_eeg']
 for root, dirs, files in os.walk('logs'):
     for f in files:
         if f[0] != '.' and f.split('.')[-1] == 'csv':  # process .csv
-            print('processing %s' % f)
             p = os.path.join(root, f)
+            print('processing %s' % p)
             y_pred = np.loadtxt(p)
             cm = confusion_matrix(y_true, y_pred)
             f1 = f1_score(y_true, y_pred, labels=range(4), average=None)
@@ -40,8 +40,8 @@ for root, dirs, files in os.walk('logs'):
                 f.write(' \\\\\\hline')
 
         elif f[0] != '.' and f.split('.')[-1] == 'log':  # process .log
-            print('processing %s' % f)
             p = os.path.join(root, f)
+            print('processing %s' % p)
             loss = []
             acc = []
             for line in open(p):

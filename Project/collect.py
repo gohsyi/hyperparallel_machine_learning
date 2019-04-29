@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 plt.style.use("ggplot")
 import argparse
 import scipy.io as sio
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, f1_score
 
 
 parser = argparse.ArgumentParser()
@@ -17,43 +17,55 @@ y_true = sio.loadmat(os.path.join('data', 'data.mat'))['test_label_eeg']
 
 for root, dirs, files in os.walk('logs'):
     for f in files:
-        try:
-            if f[0] != '.' and f.split('.')[-1] == 'csv':  # process .csv
-                print('processing %s' % f)
-                p = os.path.join(root, f)
-                y_pred = np.loadtxt(p)
-                cm = confusion_matrix(y_true, y_pred)
-                np.savetxt(os.path.join(root, f.split('.')[0] + '_cm.csv'), cm)
+        if f[0] != '.' and f.split('.')[-1] == 'csv':  # process .csv
+            print('processing %s' % f)
+            p = os.path.join(root, f)
+            y_pred = np.loadtxt(p)
+            cm = confusion_matrix(y_true, y_pred)
+            f1 = f1_score(y_true, y_pred, labels=range(4), average=None)
 
-            elif f[0] != '.' and f.split('.')[-1] == 'log':  # process .log
-                print('processing %s' % f)
-                p = os.path.join(root, f)
-                loss = []
-                acc = []
-                for line in open(p):
-                    line = line.split()
-                    for x in line:
-                        x = x.split(':')
-                        if x[0] == 'ep' and x[1] == '0':
-                            loss = []
-                            acc = []
-                        if x[0] == 'loss':
-                            loss.append(float(x[1]))
-                        if x[0] == 'acc':
-                            acc.append(float(x[1]))
+            with open(os.path.join(root, f.split('.')[0] + '.txt'), 'w') as f:
+                f.write('& neutral & sad & fear & happy \\\\\\hline\n')
+                for i in range(4):
+                    f.write(['neutral', 'sad', 'fear', 'happy'][i])
+                    for j in range(4):
+                        f.write(' & %i' % int(cm[i][j]))
+                    f.write(' \\\\\\hline\n')
 
-                if len(loss) > 0:
-                    plt.plot(loss)
-                    plt.title('loss')
-                    plt.savefig('.'.join(p.split('.')[:-1]) + '_loss.jpg')
-                    plt.cla()
+                f.write('\n')
 
-                if len(acc) > 0:
-                    for i in range(1, len(acc)):
-                        acc[i] = acc[i-1] * args.smooth + acc[i] * (1-args.smooth)
-                    plt.plot(acc)
-                    plt.title('acc')
-                    plt.savefig('.'.join(p.split('.')[:-1]) + '_acc.jpg')
-                    plt.cla()
-        except:
-            print('error occurs')
+                f.write('& neutral & sad & fear & happy \\\\\\hline\nF1')
+                for i in range(4):
+                    f.write(' & %.2f' % f1[i])
+                f.write(' \\\\\\hline')
+
+        elif f[0] != '.' and f.split('.')[-1] == 'log':  # process .log
+            print('processing %s' % f)
+            p = os.path.join(root, f)
+            loss = []
+            acc = []
+            for line in open(p):
+                line = line.split()
+                for x in line:
+                    x = x.split(':')
+                    if x[0] == 'ep' and x[1] == '0':
+                        loss = []
+                        acc = []
+                    if x[0] == 'loss':
+                        loss.append(float(x[1]))
+                    if x[0] == 'acc':
+                        acc.append(float(x[1]))
+
+            if len(loss) > 0:
+                plt.plot(loss)
+                plt.title('loss')
+                plt.savefig('.'.join(p.split('.')[:-1]) + '_loss.jpg')
+                plt.cla()
+
+            if len(acc) > 0:
+                for i in range(1, len(acc)):
+                    acc[i] = acc[i-1] * args.smooth + acc[i] * (1-args.smooth)
+                plt.plot(acc)
+                plt.title('acc')
+                plt.savefig('.'.join(p.split('.')[:-1]) + '_acc.jpg')
+                plt.cla()

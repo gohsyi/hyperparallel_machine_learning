@@ -7,7 +7,7 @@ import scipy.io as sio
 import tensorflow as tf
 from fully_connected import FullyConnected
 from fully_connected_batch import FullyConnectedBatch
-from utils import parse_arg, empty_list, getLogger
+from utils import parse_arg, empty_list, getLogger, timed
 from multiprocessing import Pool
 
 
@@ -115,20 +115,21 @@ def main():
         for j in range(args.n)
     ]
 
-    for iter in range(10):
-        """ training """
-        tf.reset_default_graph()  # clear all nodes
-        gc.collect()
+    """ training """
+    tf.reset_default_graph()  # clear all nodes
+    gc.collect()
 
+    with timed('training', logger):
         if args.serial:
             results = [train(model) for model in models]
         else:
             pool = Pool(args.n_processes)
             results = pool.map(train, models)
 
-        """ collect """
-        test_l = sio.loadmat(os.path.join('data', 'data.mat'))[args.test_l]
+    """ collect """
+    test_l = sio.loadmat(os.path.join('data', 'data.mat'))[args.test_l]
 
+    with timed('predicting', logger):
         # min
         min_results = []
         for i in range(0, len(results), args.n):
@@ -150,11 +151,11 @@ def main():
 
         predicts = np.sum(predicts, axis=1)  # according to the paper, this should be `min'
         predicts = np.argmax(predicts, axis=0)
-        np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), predicts, delimiter=',')
 
-        acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
+    np.savetxt(os.path.join(folder, 'predicts_{}.csv'.format(iter)), predicts, delimiter=',')
+    acc = np.count_nonzero(test_l[:, 0] == predicts) / test_l.shape[0]
 
-        logger.info('ep:{}, acc:{}'.format(args.max_epoches * (iter+1), acc))
+    logger.info('accuracy:{}'.format(acc))
 
 
 if __name__ == '__main__':

@@ -109,7 +109,7 @@ folder = os.path.join('logs', 'ovr_{}'.format(abstract))
 
 
 def main():
-    random.seed(args.n)
+    random.seed(args.seed)
     logger = getLogger('logs', 'ovr')
     logger.info(args)
 

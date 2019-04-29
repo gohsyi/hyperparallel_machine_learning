@@ -162,6 +162,7 @@ def main():
         validate=True
     )
     model.train()
+    np.savetxt(os.path.join(folder, 'predicts.csv'), model.predict(), delimiter=',')
 
 
 if __name__ == '__main__':

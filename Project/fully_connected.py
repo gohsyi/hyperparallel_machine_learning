@@ -145,6 +145,7 @@ def main():
         ac_fn='sigmoid',
         lr=LEARNING_RATE,
         lr_decay=False,
+        use_sigmoid=True,
         n_classes=4,
         train_data=train_de,
         train_label=train_label_eeg,
@@ -153,6 +154,8 @@ def main():
         validate=True
     )
     model.train()
+    predicts = model.predict()
+    np.savetxt(os.path.join(folder, 'predicts.csv'), np.argmax(predicts, axis=1), delimiter=',')
 
 
 if __name__ == '__main__':

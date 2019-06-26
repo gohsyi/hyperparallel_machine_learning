@@ -1,2 +1,14 @@
-# hyperparallel_machine_learning
-course repo for IV-J
+### To run Fully-Connected Network
+`python fully_connected_batch.py`
+
+### To run Min-Max Modular Netowrk OvR
+`python minmax_ovr.py -sigmoid`
+
+### To run Min-Max Modular Network OvO
+`python minmax_ovo.py -sigmoid`
+
+### To run CNN
+`python convolutional.py`
+
+### To run RNN
+`python recurrent.py`

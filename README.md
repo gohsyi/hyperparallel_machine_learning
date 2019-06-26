@@ -1,3 +1,5 @@
+Please refer to my report [here](https://github.com/gohsyi/hyperparallel_machine_learning/blob/master/reports/Report.pdf).
+
 ### To run Fully-Connected Network
 `python fully_connected_batch.py`
 
